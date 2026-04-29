@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panadería Belén - Catálogo Deslizable</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Panadería Belén</h1>
+        <p>Desliza para ver nuestros productos</p>
+    </header>
+
+    <div class="container">
+
+        <h2 class="section-title">Sector Pan</h2>
+        <div class="product-grid">
+            <div class="product-card" data-name="Marraqueta" data-price="$1.700 / kg" data-desc="Pan crujiente recién salido del horno de barro." data-img="https://images.unsplash.com/photo-1598373182133-52452f7691ef?q=80&w=600">
+                <img src="https://images.unsplash.com/photo-1598373182133-52452f7691ef?q=80&w=600" alt="Marraqueta">
+                <div class="info">
+                    <h3>Marraqueta</h3>
+                    <p class="price">$1.700 / kg</p>
+                </div>
+            </div>
+            <div class="product-card" data-name="Hallulla" data-price="$1.700 / kg" data-desc="Tradicional pan de miga suave." data-img="https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=600">
+                <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=600" alt="Hallulla">
+                <div class="info">
+                    <h3>Hallulla</h3>
+                    <p class="price">$1.700 / kg</p>
+                </div>
+            </div>
+            <div class="product-card" data-name="Pan Amasado" data-price="$600 c/u" data-desc="Hecho con amor y mucha manteca." data-img="https://images.unsplash.com/photo-1549931319-a545dcf3bc73?q=80&w=600">
+                <img src="https://images.unsplash.com/photo-1549931319-a545dcf3bc73?q=80&w=600" alt="Pan Amasado">
+                <div class="info">
+                    <h3>Pan Amasado</h3>
+                    <p class="price">$600 c/u</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Sector Embutidos</h2>
+        <div class="product-grid">
+            <div class="product-card" data-name="Jamón Colonial" data-price="$2.800 / 250g" data-desc="Corte premium, fresco y sabroso." data-img="https://images.unsplash.com/photo-1524438418349-12d4c0191305?q=80&w=600">
+                <img src="https://images.unsplash.com/photo-1524438418349-12d4c0191305?q=80&w=600" alt="Jamón">
+                <div class="info">
+                    <h3>Jamón Colonial</h3>
+                    <p class="price">$2.800</p>
+                </div>
+            </div>
+            <div class="product-card" data-name="Queso Mantecoso" data-price="$3.200 / 250g" data-desc="Queso fundente del sur." data-img="https://images.unsplash.com/photo-1486297678162-ad2a19b05844?q=80&w=600">
+                <img src="https://images.unsplash.com/photo-1486297678162-ad2a19b05844?q=80&w=600" alt="Queso">
+                <div class="info">
+                    <h3>Queso Mantecoso</h3>
+                    <p class="price">$3.200</p>
+                </div>
+            </div>
+            <div class="product-card" data-name="Salame Italiano" data-price="$2.500" data-desc="Ideal para tablas y sándwiches." data-img="https://images.unsplash.com/photo-1534177714508-957dbebb4ef4?q=80&w=600">
+                <img src="https://images.unsplash.com/photo-1534177714508-957dbebb4ef4?q=80&w=600" alt="Salame">
+                <div class="info">
+                    <h3>Salame</h3>
+                    <p class="price">$2.500</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <img id="modalImg" src="" alt="">
+            <div class="modal-details">
+                <h2 id="modalName"></h2>
+                <p id="modalDesc"></p>
+                <div id="modalPrice" class="modal-price"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById("productModal");
+        const cards = document.querySelectorAll(".product-card");
+        const closeBtn = document.querySelector(".close-btn");
+
+        cards.forEach(card => {
+            card.addEventListener("click", () => {
+                document.getElementById("modalImg").src = card.getAttribute("data-img");
+                document.getElementById("modalName").innerText = card.getAttribute("data-name");
+                document.getElementById("modalDesc").innerText = card.getAttribute("data-desc");
+                document.getElementById("modalPrice").innerText = card.getAttribute("data-price");
+                modal.style.display = "flex";
+            });
+        });
+
+        closeBtn.onclick = () => modal.style.display = "none";
+        window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+    </script>
+</body>
+</html>

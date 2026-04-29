@@ -1,0 +1,117 @@
+:root {
+    --primary: #4e342e;
+    --accent: #ef6c00;
+    --bg: #fffcf5;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg);
+    margin: 0;
+    overflow-x: hidden; /* Evita que la página entera rebote */
+}
+
+header {
+    background: var(--primary);
+    color: white;
+    text-align: center;
+    padding: 2rem 1rem;
+    border-bottom: 4px solid var(--accent);
+}
+
+.container {
+    padding: 20px;
+}
+
+.section-title {
+    color: var(--primary);
+    border-left: 5px solid var(--accent);
+    padding-left: 15px;
+    margin: 30px 0 15px;
+}
+
+/* CONTENEDOR DESLIZABLE */
+.product-grid {
+    display: flex; /* Cambiado de grid a flex */
+    gap: 20px;
+    overflow-x: auto; /* Permite scroll horizontal */
+    padding: 10px 5px 25px 5px; /* Espacio abajo para la sombra */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iPhone */
+}
+
+/* Ocultar barra de scroll aburrida (opcional) */
+.product-grid::-webkit-scrollbar {
+    height: 8px;
+}
+.product-grid::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+
+/* TARJETAS */
+.product-card {
+    flex: 0 0 240px; /* IMPORTANTE: No permite que se achiquen, ancho fijo de 240px */
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: 0.3s;
+    border: 1px solid #eee;
+}
+
+.product-card:hover {
+    transform: scale(1.02);
+}
+
+.product-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 15px 15px 0 0;
+}
+
+.info {
+    padding: 15px;
+    text-align: center;
+}
+
+.price {
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* MODAL */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0; top: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    align-items: center; justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    width: 90%;
+    max-width: 700px;
+    border-radius: 20px;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+    animation: zoom 0.3s;
+}
+
+@keyframes zoom { from {transform: scale(0.7); opacity: 0;} to {transform: scale(1); opacity: 1;} }
+
+#modalImg { width: 50%; height: 400px; object-fit: cover; }
+.modal-details { width: 50%; padding: 30px; }
+.modal-price { font-size: 2rem; color: var(--accent); font-weight: bold; margin-top: 10px; }
+.close-btn { position: absolute; right: 20px; top: 10px; font-size: 30px; cursor: pointer; }
+
+@media (max-width: 600px) {
+    .modal-content { flex-direction: column; }
+    #modalImg, .modal-details { width: 100%; }
+    #modalImg { height: 200px; }
+}
