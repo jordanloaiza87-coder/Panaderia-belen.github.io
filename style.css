@@ -102,6 +102,37 @@ header {
     overflow: hidden;
     animation: zoom 0.3s;
 }
+header {
+    background: var(--primary); 
+    color: white;
+    padding: 1.5rem 2rem;
+    border-bottom: 4px solid var(--accent); 
+    display: flex;
+    align-items: center; 
+    gap: 20px; /
+}
+
+.logo-header {
+    width: 80px; 
+    height: 80px;
+    object-fit: cover;
+    border-radius: 50%; 
+    border: 2px solid white;
+}
+
+.header-text {
+    text-align: left; 
+}
+
+.header-text h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.header-text p {
+    margin: 5px 0 0;
+    opacity: 0.9;
+}
 
 @keyframes zoom { from {transform: scale(0.7); opacity: 0;} to {transform: scale(1); opacity: 1;} }
 
