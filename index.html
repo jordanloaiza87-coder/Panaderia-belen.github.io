@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panadería Belén - Catálogo Deslizable</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+    <img src="imagen/logo.jpg" alt="Logo Belén" class="logo-header">
+    
+    <div class="header-text">
+        <h1>Panadería Belén</h1>
+        <p>Desliza para ver nuestros productos</p>
+    </div>
+</header>
+    <div class="container">
+        <!-- PANEL DE ADMINISTRACIÓN -->
+    <div style="background: #ffe0b2; padding: 20px; margin: 20px; border-radius: 10px; border: 2px dashed #ef6c00;">
+        <h2 style="color: #ef6c00; margin-top: 0;">Panel: Agregar Producto Nuevo</h2>
+        <form id="form-producto" style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <input type="text" id="prod-nombre" placeholder="Nombre del producto" required style="padding: 8px; flex: 1; min-width: 200px;">
+            <input type="text" id="prod-precio" placeholder="Precio (ej: $1500)" required style="padding: 8px; flex: 1; min-width: 100px;">
+            <input type="text" id="prod-desc" placeholder="Descripción breve" required style="padding: 8px; flex: 1; min-width: 200px;">
+            <input type="text" id="prod-img" placeholder="URL de la Imagen" required style="padding: 8px; flex: 1; min-width: 200px;">
+            <select id="prod-categoria" required style="padding: 8px; flex: 1; min-width: 150px;">
+                <option value="">Selecciona Categoría...</option>
+                <option value="PAN">PAN</option>
+                <option value="SUPERMERCADO">SUPERMERCADO</option>
+                <option value="SUPERMERCADO 2">SUPERMERCADO 2</option>
+                <option value="SUPERMERCADO 3">SUPERMERCADO 3</option>
+                <option value="GALLETAS">GALLETAS</option>
+                <option value="CONGELADOS DIMAK">CONGELADOS DIMAK</option>
+                <option value="PACEL">PACEL</option>
+                <option value="LLANQUIHUE">LLANQUIHUE</option>
+                <option value="PAN IDEAL">PAN IDEAL</option>
+                <option value="CALO(WHATTS)">CALO(WHATTS)</option>
+                <option value="SAN JORGE">SAN JORGE</option>
+            </select>
+            <button type="submit" style="background: #ef6c00; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px;">Guardar Producto</button>
+        </form>
+    </div>
+    <!-- FIN DEL PANEL -->
+
+        <h2 class="section-title">PAN</h2>
+        <div class="product-grid">
+           
+            
+        </div>
+        <h2 class="section-title">SUPERMERCADO</h2>
+        <div class="product-grid">
+            
+            
+        </div>
+
+        <h2 class="section-title">SUPERMACADO 2</h2>
+        <div class="product-grid">
+            
+        </div>
+
+        <h2 class="section-title">SUPERMACADO 3</h2>
+        
+            
+        </div>
+
+        <h2 class="section-title">GALLETAS</h2>
+        <div class="product-grid">
+            
+            
+        </div>
+
+        <h2 class="section-title">CONGELADOS DIMAK</h2>
+        <div class="product-grid">
+            
+            
+        </div>
+
+        <h2 class="section-title">PACEL</h2>
+        <div class="product-grid">
+            
+            
+            
+        </div>
+
+        <h2 class="section-title">LLANQUIHUE</h2>
+        <div class="product-grid">
+            
+            
+        </div>
+
+        <h2 class="section-title">PAN IDEAL</h2>
+        <div class="product-grid">
+            
+            
+        </div>
+        <h2 class="section-title">CALO(WHATTS)</h2>
+        <div class="product-grid">
+            
+        </div>
+
+        <h2 class="section-title">SAN JORGE</h2>
+        <div class="product-grid">
+            
+        </div>
+        <h2 class="section-title">SOPROLE</h2>
+        <div class="product-grid">
+            
+        </div>
+
+        <h2 class="section-title">DIMAK</h2>
+        <div class="product-grid">
+            
+        </div>
+        
+
+        <h2 class="section-title">CASTAÑO</h2>
+        <div class="product-grid">
+            
+        </div>
+
+        <h2 class="section-title">COLUN</h2>
+        <div class="product-grid">
+            
+        </div>
+
+        <h2 class="section-title">MARCOPOLO</h2>
+        <div class="product-grid">
+            
+        </div>
+
+        <h2 class="section-title">AGROSUPEI</h2>
+        <div class="product-grid">
+            
+        </div>
+
+        <h2 class="section-title">BOMBONES Y CHOCOLATE</h2>
+        <div class="product-grid">
+            
+        </div>
+        
+        <h2 class="section-title">MEDICAMENTOS</h2>
+        <div class="product-grid">
+            
+        </div>
+
+        <h2 class="section-title">BEBIDAS</h2>
+        <div class="product-grid">  
+        </div>
+
+        <h2 class="section-title">DULCES</h2>
+        <div class="product-grid">
+            
+        </div>
+
+
+    </div>
+
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <img id="modalImg" src="" alt="">
+            <div class="modal-details">
+                <h2 id="modalName"></h2>
+                <p id="modalDesc"></p>
+                <div id="modalPrice" class="modal-price"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById("productModal");
+        const cards = document.querySelectorAll(".product-card");
+        const closeBtn = document.querySelector(".close-btn");
+
+        cards.forEach(card => {
+            card.addEventListener("click", () => {
+                document.getElementById("modalImg").src = card.getAttribute("data-img");
+                document.getElementById("modalName").innerText = card.getAttribute("data-name");
+                document.getElementById("modalDesc").innerText = card.getAttribute("data-desc");
+                document.getElementById("modalPrice").innerText = card.getAttribute("data-price");
+                modal.style.display = "flex";
+            });
+        });
+
+        closeBtn.onclick = () => modal.style.display = "none";
+        window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+    </script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+      import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAfle8tRTuz_33Su2H8fTwjUywRN5VKU7Q",
+        authDomain: "panaderia-belen.firebaseapp.com",
+        projectId: "panaderia-belen",
+        storageBucket: "panaderia-belen.firebasestorage.app",
+        messagingSenderId: "982156401466",
+        appId: "1:982156401466:web:4b8167ae3b676f8b3ece03"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      // 1. FUNCIÓN PARA AGREGAR PRODUCTO
+      const formulario = document.getElementById('form-producto');
+      if(formulario) {
+          formulario.addEventListener('submit', async (e) => {
+              e.preventDefault();
+              
+              const nombre = document.getElementById('prod-nombre').value;
+              const precio = document.getElementById('prod-precio').value;
+              const descripcion = document.getElementById('prod-desc').value;
+              const imagen = document.getElementById('prod-img').value;
+              const categoria = document.getElementById('prod-categoria').value;
+
+              try {
+                  await addDoc(collection(db, "productos"), {
+                      nombre: nombre,
+                      precio: precio,
+                      descripcion: descripcion,
+                      imagen: imagen,
+                      categoria: categoria
+                  });
+                  alert("¡Producto guardado!");
+                  formulario.reset(); 
+                  location.reload(); 
+              } catch (error) {
+                  console.error("Error al guardar: ", error);
+                  alert("Hubo un error al guardar. Intenta de nuevo.");
+              }
+          });
+      }
+
+      // 2. FUNCIÓN PARA LEER Y MOSTRAR PRODUCTOS
+      async function cargarProductos() {
+          const querySnapshot = await getDocs(collection(db, "productos"));
+          
+          querySnapshot.forEach((docSnap) => {
+              const data = docSnap.data();
+              const idProducto = docSnap.id;
+              
+              const titulos = document.querySelectorAll('.section-title');
+              let contenedorGrilla = null;
+              
+              titulos.forEach(h2 => {
+                  if(h2.innerText.trim().toUpperCase() === data.categoria.toUpperCase()) {
+                      contenedorGrilla = h2.nextElementSibling;
+                  }
+              });
+
+              if(contenedorGrilla) {
+                  const tarjeta = document.createElement('div');
+                  tarjeta.className = 'product-card';
+                  tarjeta.innerHTML = `
+                      <img src="${data.imagen}" alt="${data.nombre}">
+                      <div class="info">
+                          <h3>${data.nombre}</h3>
+                          <p class="price">${data.precio}</p>
+                          <button class="btn-eliminar" style="background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px; width: 100%;">Eliminar</button>
+                      </div>
+                  `;
+
+                  // Evento para eliminar
+                  tarjeta.querySelector('.btn-eliminar').addEventListener('click', async (e) => {
+                      e.stopPropagation(); // Evita que se abra el modal al hacer clic en eliminar
+                      const confirmacion = confirm("¿Estás seguro de que quieres eliminar este producto?");
+                      if(confirmacion) {
+                          await deleteDoc(doc(db, "productos", idProducto));
+                          alert("Producto eliminado");
+                          location.reload(); 
+                      }
+                  });
+
+                  // Evento para abrir el modal normal
+                  tarjeta.addEventListener('click', () => {
+                      document.getElementById("modalImg").src = data.imagen;
+                      document.getElementById("modalName").innerText = data.nombre;
+                      document.getElementById("modalDesc").innerText = data.descripcion;
+                      document.getElementById("modalPrice").innerText = data.precio;
+                      document.getElementById("productModal").style.display = "flex";
+                  });
+
+                  contenedorGrilla.prepend(tarjeta);
+              }
+          });
+      }
+
+      cargarProductos();
+    </script>
+    
+</body>
+</html>
