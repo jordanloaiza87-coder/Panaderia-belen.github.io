@@ -218,6 +218,15 @@
 
         formulario.addEventListener('submit', async (e) => {
             e.preventDefault();
+            // --- NUEVO: VERIFICACIÓN INSTANTÁNEA ---
+            try {
+                await auth.currentUser.reload();
+            } catch (error) {
+                alert("❌ Tu cuenta ha sido desactivada o eliminada.");
+                signOut(auth);
+                return; 
+            }
+            // --------------------------------------
             
             const datosProducto = {
                 nombre: document.getElementById('prod-nombre').value,
@@ -289,6 +298,17 @@
                         // Evento Eliminar
                         tarjeta.querySelector('.btn-eliminar').addEventListener('click', async () => {
                             if(confirm(`⚠️ ¿Deseas eliminar definitivamente "${data.nombre}"?`)) {
+                                
+                                // --- NUEVO: VERIFICACIÓN INSTANTÁNEA ---
+                                try {
+                                    await auth.currentUser.reload();
+                                } catch (error) {
+                                    alert("❌ No tienes permiso. Tu cuenta fue eliminada.");
+                                    signOut(auth);
+                                    return; // Lo detiene antes de que borre
+                                }
+                                // --------------------------------------
+
                                 await deleteDoc(doc(db, "productos", docSnap.id));
                                 cargarProductosAdmin();
                             }
