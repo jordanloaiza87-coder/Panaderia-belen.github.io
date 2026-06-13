@@ -147,6 +147,7 @@ header {
     #modalImg { height: 200px; }
 }
 /* --- AJUSTES EXCLUSIVOS PARA CELULAR (CARRUSEL DESLIZABLE) --- */
+/* --- AJUSTES EXCLUSIVOS PARA CELULAR (CARRUSEL DESLIZABLE) --- */
 @media (max-width: 768px) {
     .product-grid {
         display: flex !important;
@@ -163,20 +164,20 @@ header {
 
     .product-card {
         flex: 0 0 auto !important;
-        width: 140px !important; /* Tamaño pequeño solo en celular */
+        width: 180px !important; /* <-- Aumentamos el ancho (antes 140px) */
         box-sizing: border-box;
     }
 
     .product-card img {
         width: 100% !important;
-        height: 120px !important;
+        height: 160px !important; /* <-- Aumentamos el alto de la foto (antes 120px) */
         object-fit: contain !important;
         border-radius: 5px;
         margin-bottom: 10px;
     }
 
     .product-card h3 {
-        font-size: 14px !important;
+        font-size: 16px !important; /* <-- Texto un poco más grande */
         margin: 5px 0 !important;
         white-space: nowrap;
         overflow: hidden;
@@ -184,7 +185,7 @@ header {
     }
 
     .product-card .price {
-        font-size: 16px !important;
+        font-size: 18px !important; /* <-- Precio más grande */
         font-weight: bold;
         color: #ef6c00 !important;
     }
