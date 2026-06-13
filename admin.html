@@ -7,7 +7,15 @@
     <link rel="icon" href="imagen/logo.jpg">
     <link rel="apple-touch-icon" href="imagen/logo.jpg">
     <meta name="apple-mobile-web-app-title" content="Panadería Belén">
-    
+    <link rel="icon" href="imagen/logo.jpg">
+    <link rel="apple-touch-icon" href="imagen/logo.jpg">
+    <link rel="icon" sizes="192x192" href="imagen/logo.jpg">
+    <link rel="icon" sizes="512x512" href="imagen/logo.jpg">
+    <meta name="apple-mobile-web-app-title" content="Panadería Belén">
+    <meta name="application-name" content="Panadería Belén">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#ef6c00">
     <link rel="stylesheet" href="style.css">
     <style>
         #panel-admin { display: none; } 
@@ -72,13 +80,12 @@
                         <option value="BEBIDAS">BEBIDAS</option>
                         <option value="DULCES">DULCES</option>
                     </select>
-
-                    <div style="flex: 1; min-width: 100%; background: #fff3e0; padding: 15px; border-radius: 5px; border: 1px dashed #ffb74d;">
+                        <div style="flex: 1; min-width: 100%; background: #fff3e0; padding: 15px; border-radius: 5px; border: 1px dashed #ffb74d; box-sizing: border-box;">
                         <p style="margin: 0 0 10px 0; font-size: 14px; color: #ef6c00; font-weight: bold;">📸 Foto del producto (Usa cámara o link):</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                             <div style="flex: 1; min-width: 200px;">
                                 <label style="font-size: 12px; color: #555;">Opción 1: Tomar foto o Galería</label>
-                                <input type="file" id="prod-img-file" accept="image/*" capture="environment" style="width: 100%; padding: 5px;">
+                                <input type="file" id="prod-img-file" accept="image/*" capture="environment" style="width: 100%; padding: 5px; box-sizing: border-box;">
                             </div>
                             <div style="flex: 1; min-width: 200px;">
                                 <label style="font-size: 12px; color: #555;">Opción 2: Pegar Link (URL)</label>
@@ -307,3 +314,62 @@
                 
                 titulos.forEach(h2 => {
                     if(h2.innerText.trim().toUpperCase() === data.categoria.toUpperCase()) {
+                        contenedorGrilla = h2.nextElementSibling;
+                    }
+                });
+
+                if(contenedorGrilla) {
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'product-card';
+                    tarjeta.innerHTML = `
+                        <img src="${data.imagen}" alt="${data.nombre}">
+                        <div class="info">
+                            <h3>${data.nombre}</h3>
+                            <p class="price">${data.precio}</p>
+                            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                <button class="btn-editar" style="background: #2196F3; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Editar</button>
+                                <button class="btn-eliminar" style="background: #f44336; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Borrar</button>
+                            </div>
+                        </div>
+                    `;
+
+                    tarjeta.querySelector('.btn-eliminar').addEventListener('click', async () => {
+                        if(confirm(`⚠️ ¿Seguro que deseas eliminar "${data.nombre}"?`)) {
+                            try { await auth.currentUser.reload(); } catch (error) {
+                                alert("❌ No tienes permiso.");
+                                signOut(auth); return;
+                            }
+                            await deleteDoc(doc(db, "productos", docSnap.id));
+                            cargarProductosAdmin();
+                        }
+                    });
+
+                    tarjeta.querySelector('.btn-editar').addEventListener('click', () => {
+                        document.getElementById('prod-nombre').value = data.nombre;
+                        document.getElementById('prod-precio').value = data.precio;
+                        document.getElementById('prod-desc').value = data.descripcion || '';
+                        document.getElementById('prod-categoria').value = data.categoria;
+                        
+                        urlImagenActual = data.imagen; 
+                        document.getElementById('prod-img-file').value = ''; 
+                        
+                        if(data.imagen.startsWith('data:image')) {
+                            document.getElementById('prod-img-url').value = '';
+                        } else {
+                            document.getElementById('prod-img-url').value = data.imagen; 
+                        }
+                        
+                        idProductoEditando = docSnap.id;
+                        btnGuardarForm.innerText = "🔄 Actualizar Producto";
+                        btnGuardarForm.style.background = "#2196F3";
+                        btnCancelarEdicion.style.display = 'block';
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+
+                    contenedorGrilla.prepend(tarjeta);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
