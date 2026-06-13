@@ -7,10 +7,9 @@
     <link rel="icon" href="imagen/logo.jpg">
     <link rel="apple-touch-icon" href="imagen/logo.jpg">
     <meta name="apple-mobile-web-app-title" content="Panadería Belén">
-    <meta name="application-name" content="Panadería Belén">
+    
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Estilos específicos para el panel de admin */
         #panel-admin { display: none; } 
         .login-box { max-width: 350px; margin: 50px auto; padding: 30px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
         .login-box input { width: 100%; margin-bottom: 15px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
@@ -27,8 +26,7 @@
             <p>Gestión interna de inventario</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <a href="index.html" style="background: white; color: var(--primary); text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; border: 2px solid white; transition: 0.2s;">Ver como Cliente</a>
-            
+            <a href="index.html" style="background: white; color: var(--primary); text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; border: 2px solid white;">Ver como Cliente</a>
             <button id="btn-logout" class="btn-logout" style="display:none;">Cerrar Sesión</button>
         </div>
     </header>
@@ -36,11 +34,10 @@
     <div class="container">
         <div id="login-section" class="login-box">
             <h2 style="color: var(--primary); margin-top: 0;">Iniciar Sesión</h2>
-            <p style="color: #666; font-size: 0.9em; margin-bottom: 20px;">Ingresa tus credenciales autorizadas.</p>
             <input type="email" id="login-email" placeholder="Correo electrónico" required>
             <input type="password" id="login-pass" placeholder="Contraseña" required>
             <button id="btn-login">Ingresar</button>
-            <p id="login-error" style="color: red; display: none; margin-top: 15px; font-size: 0.9em; font-weight: bold;">Error: Credenciales incorrectas.</p>
+            <p id="login-error" style="color: red; display: none; margin-top: 15px; font-size: 0.9em; font-weight: bold;"></p>
         </div>
 
         <div id="panel-admin">
@@ -50,31 +47,29 @@
                     <input type="text" id="prod-nombre" placeholder="Nombre del producto" required style="padding: 10px; flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 5px;">
                     <input type="text" id="prod-precio" placeholder="Precio (ej: $1500)" required style="padding: 10px; flex: 1; min-width: 100px; border: 1px solid #ccc; border-radius: 5px;">
                     <input type="text" id="prod-desc" placeholder="Descripción breve" required style="padding: 10px; flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 5px;">
-                    <input type="url" id="prod-img" placeholder="URL de la Imagen" required style="padding: 10px; flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 5px;">
+                    
                     <select id="prod-categoria" required style="padding: 10px; flex: 1; min-width: 150px; border: 1px solid #ccc; border-radius: 5px;">
                         <option value="">Selecciona Categoría...</option>
                         <option value="PAN">PAN</option>
                         <option value="SUPERMERCADO">SUPERMERCADO</option>
-                        <option value="SUPERMERCADO 2">SUPERMERCADO 2</option>
-                        <option value="SUPERMERCADO 3">SUPERMERCADO 3</option>
-                        <option value="GALLETAS">GALLETAS</option>
-                        <option value="CONGELADOS DIMAK">CONGELADOS DIMAK</option>
-                        <option value="PACEL">PACEL</option>
-                        <option value="LLANQUIHUE">LLANQUIHUE</option>
-                        <option value="PAN IDEAL">PAN IDEAL</option>
-                        <option value="CALO(WHATTS)">CALO(WHATTS)</option>
-                        <option value="SAN JORGE">SAN JORGE</option>
-                        <option value="SOPROLE">SOPROLE</option>
-                        <option value="DIMAK">DIMAK</option>
-                        <option value="CASTAÑO">CASTAÑO</option>
-                        <option value="COLUN">COLUN</option>
-                        <option value="MARCOPOLO">MARCOPOLO</option>
-                        <option value="AGROSUPEI">AGROSUPEI</option>
-                        <option value="BOMBONES Y CHOCOLATE">BOMBONES Y CHOCOLATE</option>
-                        <option value="MEDICAMENTOS">MEDICAMENTOS</option>
                         <option value="BEBIDAS">BEBIDAS</option>
                         <option value="DULCES">DULCES</option>
                     </select>
+
+                    <div style="flex: 1; min-width: 100%; background: #fff3e0; padding: 15px; border-radius: 5px; border: 1px dashed #ffb74d;">
+                        <p style="margin: 0 0 10px 0; font-size: 14px; color: #ef6c00; font-weight: bold;">📸 Foto del producto (Usa cámara o link):</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="font-size: 12px; color: #555;">Opción 1: Tomar foto o Galería</label>
+                                <input type="file" id="prod-img-file" accept="image/*" capture="environment" style="width: 100%; padding: 5px;">
+                            </div>
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="font-size: 12px; color: #555;">Opción 2: Pegar Link (URL)</label>
+                                <input type="url" id="prod-img-url" placeholder="https://..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+                            </div>
+                        </div>
+                    </div>
+
                     <button id="btn-guardar-form" type="submit" style="background: #ef6c00; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; font-size: 16px; min-width: 150px;">Guardar Producto</button>
                     <button type="button" id="btn-cancelar-edicion" style="display: none; background: #999; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; font-size: 16px;">Cancelar Edición</button>
                 </form>
@@ -85,57 +80,6 @@
                 <div class="product-grid"></div>
 
                 <h2 class="section-title">SUPERMERCADO</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">SUPERMERCADO 2</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">SUPERMERCADO 3</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">GALLETAS</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">CONGELADOS DIMAK</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">PACEL</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">LLANQUIHUE</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">PAN IDEAL</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">CALO(WHATTS)</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">SAN JORGE</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">SOPROLE</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">DIMAK</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">CASTAÑO</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">COLUN</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">MARCOPOLO</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">AGROSUPEI</h2>
-                <div class="product-grid"></div>
-
-                <h2 class="section-title">BOMBONES Y CHOCOLATE</h2>
-                <div class="product-grid"></div>
-                
-                <h2 class="section-title">MEDICAMENTOS</h2>
                 <div class="product-grid"></div>
 
                 <h2 class="section-title">BEBIDAS</h2>
@@ -168,29 +112,22 @@
         const loginSection = document.getElementById('login-section');
         const panelAdmin = document.getElementById('panel-admin');
         const btnLogout = document.getElementById('btn-logout');
-        const msjError = document.getElementById('login-error');
         
         const formulario = document.getElementById('form-producto');
         const btnGuardarForm = document.getElementById('btn-guardar-form');
         const btnCancelarEdicion = document.getElementById('btn-cancelar-edicion');
+        
         let idProductoEditando = null;
+        let urlImagenActual = ""; // Guarda la memoria de la foto al editar
 
-        // --- SISTEMA DE AUTENTICACIÓN ---
+        // --- AUTENTICACIÓN ---
         document.getElementById('btn-login').addEventListener('click', () => {
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-pass').value;
-            
-            if(!email || !pass) {
-                msjError.innerText = "Por favor, ingresa correo y contraseña.";
-                msjError.style.display = 'block';
-                return;
-            }
-
-            signInWithEmailAndPassword(auth, email, pass)
-                .catch(error => {
-                    msjError.innerText = "Error: Correo o contraseña incorrectos.";
-                    msjError.style.display = 'block';
-                });
+            signInWithEmailAndPassword(auth, email, pass).catch(() => {
+                document.getElementById('login-error').innerText = "Error: Credenciales incorrectas.";
+                document.getElementById('login-error').style.display = 'block';
+            });
         });
 
         btnLogout.addEventListener('click', () => signOut(auth));
@@ -205,14 +142,55 @@
                 loginSection.style.display = 'block';
                 panelAdmin.style.display = 'none';
                 btnLogout.style.display = 'none';
-                msjError.style.display = 'none';
             }
         });
 
-        // --- LÓGICA DE PRODUCTOS (CRUD) ---
+        // --- MAGIA: COMPRESIÓN DE FOTO A TEXTO (Base64) ---
+        function comprimirImagenAtexto(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        // Achicamos la imagen a un máximo de 600px para que pese súper poco
+                        const MAX_WIDTH = 600; 
+                        const MAX_HEIGHT = 600;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Convierte la imagen achicada en código de texto (jpeg)
+                        const textoBase64 = canvas.toDataURL('image/jpeg', 0.7); 
+                        resolve(textoBase64);
+                    };
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // --- LÓGICA DE FORMULARIO ---
         function resetearFormulario() {
             formulario.reset();
             idProductoEditando = null;
+            urlImagenActual = "";
             btnGuardarForm.innerText = "Guardar Producto";
             btnGuardarForm.style.background = "#ef6c00";
             btnCancelarEdicion.style.display = 'none';
@@ -222,34 +200,46 @@
 
         formulario.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // --- NUEVO: VERIFICACIÓN INSTANTÁNEA ---
-            try {
-                await auth.currentUser.reload();
-            } catch (error) {
-                alert("❌ Tu cuenta ha sido desactivada o eliminada.");
-                signOut(auth);
-                return; 
-            }
-            // --------------------------------------
             
-            const datosProducto = {
-                nombre: document.getElementById('prod-nombre').value,
-                precio: document.getElementById('prod-precio').value,
-                descripcion: document.getElementById('prod-desc').value,
-                imagen: document.getElementById('prod-img').value,
-                categoria: document.getElementById('prod-categoria').value
-            };
+            try { await auth.currentUser.reload(); } catch (error) {
+                alert("❌ Tu cuenta ha sido desactivada o eliminada.");
+                signOut(auth); return; 
+            }
 
             btnGuardarForm.disabled = true;
-            btnGuardarForm.innerText = "Procesando...";
+            btnGuardarForm.innerText = "Procesando foto y guardando...";
 
             try {
+                let urlImagenFinal = urlImagenActual; 
+                const archivoFoto = document.getElementById('prod-img-file').files[0];
+                const urlTexto = document.getElementById('prod-img-url').value.trim();
+
+                // LÓGICA INTELIGENTE DUAL
+                if (archivoFoto) {
+                    // Si usa la cámara, aplicamos la magia de comprimir a texto
+                    urlImagenFinal = await comprimirImagenAtexto(archivoFoto);
+                } else if (urlTexto !== "") {
+                    // Si pega un link normal
+                    urlImagenFinal = urlTexto;
+                } else if (!idProductoEditando) {
+                    alert("❌ Debes tomar una foto o pegar un link URL.");
+                    btnGuardarForm.disabled = false;
+                    btnGuardarForm.innerText = "Guardar Producto";
+                    return;
+                }
+
+                const datosProducto = {
+                    nombre: document.getElementById('prod-nombre').value,
+                    precio: document.getElementById('prod-precio').value,
+                    descripcion: document.getElementById('prod-desc').value,
+                    imagen: urlImagenFinal, // Aquí se guarda el texto gigante o el link
+                    categoria: document.getElementById('prod-categoria').value
+                };
+
                 if (idProductoEditando) {
                     await updateDoc(doc(db, "productos", idProductoEditando), datosProducto);
-                    alert("✅ Producto actualizado correctamente.");
                 } else {
                     await addDoc(collection(db, "productos"), datosProducto);
-                    alert("✅ Producto nuevo agregado al catálogo.");
                 }
                 
                 resetearFormulario();
@@ -262,84 +252,76 @@
             }
         });
 
+        // --- CARGAR Y RENDERIZAR PRODUCTOS ---
         async function cargarProductosAdmin() {
-            // Limpiar todas las grillas antes de cargar para evitar duplicados
-            const grillas = document.querySelectorAll('.product-grid');
-            grillas.forEach(g => g.innerHTML = '');
-
-            try {
-                const querySnapshot = await getDocs(collection(db, "productos"));
+            document.querySelectorAll('.product-grid').forEach(g => g.innerHTML = '');
+            const querySnapshot = await getDocs(collection(db, "productos"));
+            
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const titulos = document.querySelectorAll('.section-title');
+                let contenedorGrilla = null;
                 
-                querySnapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    
-                    // Buscar la grilla correcta según la categoría del producto
-                    const titulos = document.querySelectorAll('.section-title');
-                    let contenedorGrilla = null;
-                    
-                    titulos.forEach(h2 => {
-                        if(h2.innerText.trim().toUpperCase() === data.categoria.toUpperCase()) {
-                            contenedorGrilla = h2.nextElementSibling;
+                titulos.forEach(h2 => {
+                    if(h2.innerText.trim().toUpperCase() === data.categoria.toUpperCase()) {
+                        contenedorGrilla = h2.nextElementSibling;
+                    }
+                });
+
+                if(contenedorGrilla) {
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'product-card';
+                    tarjeta.innerHTML = `
+                        <img src="${data.imagen}" alt="${data.nombre}">
+                        <div class="info">
+                            <h3>${data.nombre}</h3>
+                            <p class="price">${data.precio}</p>
+                            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                <button class="btn-editar" style="background: #2196F3; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Editar</button>
+                                <button class="btn-eliminar" style="background: #f44336; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Borrar</button>
+                            </div>
+                        </div>
+                    `;
+
+                    // Evento Eliminar
+                    tarjeta.querySelector('.btn-eliminar').addEventListener('click', async () => {
+                        if(confirm(`⚠️ ¿Seguro que deseas eliminar "${data.nombre}"?`)) {
+                            try { await auth.currentUser.reload(); } catch (error) {
+                                alert("❌ No tienes permiso.");
+                                signOut(auth); return;
+                            }
+                            await deleteDoc(doc(db, "productos", docSnap.id));
+                            cargarProductosAdmin();
                         }
                     });
 
-                    if(contenedorGrilla) {
-                        const tarjeta = document.createElement('div');
-                        tarjeta.className = 'product-card';
+                    // Evento Editar
+                    tarjeta.querySelector('.btn-editar').addEventListener('click', () => {
+                        document.getElementById('prod-nombre').value = data.nombre;
+                        document.getElementById('prod-precio').value = data.precio;
+                        document.getElementById('prod-desc').value = data.descripcion || '';
+                        document.getElementById('prod-categoria').value = data.categoria;
                         
-                        tarjeta.innerHTML = `
-                            <img src="${data.imagen}" alt="${data.nombre}">
-                            <div class="info">
-                                <h3>${data.nombre}</h3>
-                                <p class="price">${data.precio}</p>
-                                <div style="display: flex; gap: 5px; margin-top: 10px;">
-                                    <button class="btn-editar" style="background: #2196F3; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Editar</button>
-                                    <button class="btn-eliminar" style="background: #f44336; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Borrar</button>
-                                </div>
-                            </div>
-                        `;
+                        urlImagenActual = data.imagen; 
+                        document.getElementById('prod-img-file').value = ''; 
+                        
+                        // Si es un texto gigante Base64, no lo mostramos en el cuadrito URL para no marear
+                        if(data.imagen.startsWith('data:image')) {
+                            document.getElementById('prod-img-url').value = '';
+                        } else {
+                            document.getElementById('prod-img-url').value = data.imagen; 
+                        }
+                        
+                        idProductoEditando = docSnap.id;
+                        btnGuardarForm.innerText = "🔄 Actualizar Producto";
+                        btnGuardarForm.style.background = "#2196F3";
+                        btnCancelarEdicion.style.display = 'block';
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
 
-                        // Evento Eliminar
-                        tarjeta.querySelector('.btn-eliminar').addEventListener('click', async () => {
-                            if(confirm(`⚠️ ¿Deseas eliminar definitivamente "${data.nombre}"?`)) {
-                                
-                                // --- NUEVO: VERIFICACIÓN INSTANTÁNEA ---
-                                try {
-                                    await auth.currentUser.reload();
-                                } catch (error) {
-                                    alert("❌ No tienes permiso. Tu cuenta fue eliminada.");
-                                    signOut(auth);
-                                    return; // Lo detiene antes de que borre
-                                }
-                                // --------------------------------------
-
-                                await deleteDoc(doc(db, "productos", docSnap.id));
-                                cargarProductosAdmin();
-                            }
-                        });
-
-                        // Evento Editar
-                        tarjeta.querySelector('.btn-editar').addEventListener('click', () => {
-                            document.getElementById('prod-nombre').value = data.nombre;
-                            document.getElementById('prod-precio').value = data.precio;
-                            document.getElementById('prod-desc').value = data.descripcion || '';
-                            document.getElementById('prod-img').value = data.imagen;
-                            document.getElementById('prod-categoria').value = data.categoria;
-                            
-                            idProductoEditando = docSnap.id;
-                            btnGuardarForm.innerText = "🔄 Actualizar Producto";
-                            btnGuardarForm.style.background = "#2196F3";
-                            btnCancelarEdicion.style.display = 'block';
-                            
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                        });
-
-                        contenedorGrilla.prepend(tarjeta);
-                    }
-                });
-            } catch (error) {
-                console.error("Error al cargar productos: ", error);
-            }
+                    contenedorGrilla.prepend(tarjeta);
+                }
+            });
         }
     </script>
 </body>
