@@ -146,3 +146,46 @@ header {
     #modalImg, .modal-details { width: 100%; }
     #modalImg { height: 200px; }
 }
+/* --- AJUSTES EXCLUSIVOS PARA CELULAR (CARRUSEL DESLIZABLE) --- */
+@media (max-width: 768px) {
+    .product-grid {
+        display: flex !important;
+        flex-wrap: nowrap !important; /* Fuerza una sola línea horizontal */
+        overflow-x: auto !important; /* Activa el deslizamiento */
+        gap: 15px;
+        padding-bottom: 15px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .product-grid::-webkit-scrollbar {
+        display: none; /* Oculta la barra de scroll */
+    }
+
+    .product-card {
+        flex: 0 0 auto !important;
+        width: 140px !important; /* Tamaño pequeño solo en celular */
+        box-sizing: border-box;
+    }
+
+    .product-card img {
+        width: 100% !important;
+        height: 120px !important;
+        object-fit: contain !important;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    .product-card h3 {
+        font-size: 14px !important;
+        margin: 5px 0 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .product-card .price {
+        font-size: 16px !important;
+        font-weight: bold;
+        color: #ef6c00 !important;
+    }
+}
