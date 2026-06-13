@@ -52,6 +52,23 @@
                         <option value="">Selecciona Categoría...</option>
                         <option value="PAN">PAN</option>
                         <option value="SUPERMERCADO">SUPERMERCADO</option>
+                        <option value="SUPERMERCADO 2">SUPERMERCADO 2</option>
+                        <option value="SUPERMERCADO 3">SUPERMERCADO 3</option>
+                        <option value="GALLETAS">GALLETAS</option>
+                        <option value="CONGELADOS DIMAK">CONGELADOS DIMAK</option>
+                        <option value="PACEL">PACEL</option>
+                        <option value="LLANQUIHUE">LLANQUIHUE</option>
+                        <option value="PAN IDEAL">PAN IDEAL</option>
+                        <option value="CALO(WHATTS)">CALO(WHATTS)</option>
+                        <option value="SAN JORGE">SAN JORGE</option>
+                        <option value="SOPROLE">SOPROLE</option>
+                        <option value="DIMAK">DIMAK</option>
+                        <option value="CASTAÑO">CASTAÑO</option>
+                        <option value="COLUN">COLUN</option>
+                        <option value="MARCOPOLO">MARCOPOLO</option>
+                        <option value="AGROSUPEI">AGROSUPEI</option>
+                        <option value="BOMBONES Y CHOCOLATE">BOMBONES Y CHOCOLATE</option>
+                        <option value="MEDICAMENTOS">MEDICAMENTOS</option>
                         <option value="BEBIDAS">BEBIDAS</option>
                         <option value="DULCES">DULCES</option>
                     </select>
@@ -78,13 +95,44 @@
             <div id="categorias-container">
                 <h2 class="section-title">PAN</h2>
                 <div class="product-grid"></div>
-
                 <h2 class="section-title">SUPERMERCADO</h2>
                 <div class="product-grid"></div>
-
+                <h2 class="section-title">SUPERMERCADO 2</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">SUPERMERCADO 3</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">GALLETAS</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">CONGELADOS DIMAK</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">PACEL</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">LLANQUIHUE</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">PAN IDEAL</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">CALO(WHATTS)</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">SAN JORGE</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">SOPROLE</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">DIMAK</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">CASTAÑO</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">COLUN</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">MARCOPOLO</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">AGROSUPEI</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">BOMBONES Y CHOCOLATE</h2>
+                <div class="product-grid"></div>
+                <h2 class="section-title">MEDICAMENTOS</h2>
+                <div class="product-grid"></div>
                 <h2 class="section-title">BEBIDAS</h2>
                 <div class="product-grid"></div>
-
                 <h2 class="section-title">DULCES</h2>
                 <div class="product-grid"></div>
             </div>
@@ -118,7 +166,7 @@
         const btnCancelarEdicion = document.getElementById('btn-cancelar-edicion');
         
         let idProductoEditando = null;
-        let urlImagenActual = ""; // Guarda la memoria de la foto al editar
+        let urlImagenActual = ""; 
 
         // --- AUTENTICACIÓN ---
         document.getElementById('btn-login').addEventListener('click', () => {
@@ -155,7 +203,6 @@
                     img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        // Achicamos la imagen a un máximo de 600px para que pese súper poco
                         const MAX_WIDTH = 600; 
                         const MAX_HEIGHT = 600;
                         let width = img.width;
@@ -177,7 +224,6 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
                         
-                        // Convierte la imagen achicada en código de texto (jpeg)
                         const textoBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                         resolve(textoBase64);
                     };
@@ -214,12 +260,9 @@
                 const archivoFoto = document.getElementById('prod-img-file').files[0];
                 const urlTexto = document.getElementById('prod-img-url').value.trim();
 
-                // LÓGICA INTELIGENTE DUAL
                 if (archivoFoto) {
-                    // Si usa la cámara, aplicamos la magia de comprimir a texto
                     urlImagenFinal = await comprimirImagenAtexto(archivoFoto);
                 } else if (urlTexto !== "") {
-                    // Si pega un link normal
                     urlImagenFinal = urlTexto;
                 } else if (!idProductoEditando) {
                     alert("❌ Debes tomar una foto o pegar un link URL.");
@@ -232,7 +275,7 @@
                     nombre: document.getElementById('prod-nombre').value,
                     precio: document.getElementById('prod-precio').value,
                     descripcion: document.getElementById('prod-desc').value,
-                    imagen: urlImagenFinal, // Aquí se guarda el texto gigante o el link
+                    imagen: urlImagenFinal, 
                     categoria: document.getElementById('prod-categoria').value
                 };
 
@@ -264,65 +307,3 @@
                 
                 titulos.forEach(h2 => {
                     if(h2.innerText.trim().toUpperCase() === data.categoria.toUpperCase()) {
-                        contenedorGrilla = h2.nextElementSibling;
-                    }
-                });
-
-                if(contenedorGrilla) {
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'product-card';
-                    tarjeta.innerHTML = `
-                        <img src="${data.imagen}" alt="${data.nombre}">
-                        <div class="info">
-                            <h3>${data.nombre}</h3>
-                            <p class="price">${data.precio}</p>
-                            <div style="display: flex; gap: 5px; margin-top: 10px;">
-                                <button class="btn-editar" style="background: #2196F3; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Editar</button>
-                                <button class="btn-eliminar" style="background: #f44336; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Borrar</button>
-                            </div>
-                        </div>
-                    `;
-
-                    // Evento Eliminar
-                    tarjeta.querySelector('.btn-eliminar').addEventListener('click', async () => {
-                        if(confirm(`⚠️ ¿Seguro que deseas eliminar "${data.nombre}"?`)) {
-                            try { await auth.currentUser.reload(); } catch (error) {
-                                alert("❌ No tienes permiso.");
-                                signOut(auth); return;
-                            }
-                            await deleteDoc(doc(db, "productos", docSnap.id));
-                            cargarProductosAdmin();
-                        }
-                    });
-
-                    // Evento Editar
-                    tarjeta.querySelector('.btn-editar').addEventListener('click', () => {
-                        document.getElementById('prod-nombre').value = data.nombre;
-                        document.getElementById('prod-precio').value = data.precio;
-                        document.getElementById('prod-desc').value = data.descripcion || '';
-                        document.getElementById('prod-categoria').value = data.categoria;
-                        
-                        urlImagenActual = data.imagen; 
-                        document.getElementById('prod-img-file').value = ''; 
-                        
-                        // Si es un texto gigante Base64, no lo mostramos en el cuadrito URL para no marear
-                        if(data.imagen.startsWith('data:image')) {
-                            document.getElementById('prod-img-url').value = '';
-                        } else {
-                            document.getElementById('prod-img-url').value = data.imagen; 
-                        }
-                        
-                        idProductoEditando = docSnap.id;
-                        btnGuardarForm.innerText = "🔄 Actualizar Producto";
-                        btnGuardarForm.style.background = "#2196F3";
-                        btnCancelarEdicion.style.display = 'block';
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    });
-
-                    contenedorGrilla.prepend(tarjeta);
-                }
-            });
-        }
-    </script>
-</body>
-</html>
