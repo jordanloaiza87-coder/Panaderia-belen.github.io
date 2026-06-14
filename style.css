@@ -184,9 +184,11 @@ header {
         text-overflow: ellipsis;
     }
 
-    .product-card .price {
-        font-size: 18px !important; /* <-- Precio más grande */
-        font-weight: bold;
-        color: #ef6c00 !important;
+    .product-card img {
+        width: 100% !important;
+        height: 160px !important; /* <-- Aumentamos el alto de la foto (antes 120px) */
+        object-fit: contain !important;
+        border-radius: 5px;
+        margin-bottom: 10px;
     }
 }
