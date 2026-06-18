@@ -156,7 +156,7 @@
                       const tarjeta = document.createElement('div');
                       tarjeta.className = 'product-card';
                       tarjeta.innerHTML = `
-                          <img src="${data.imagen}" alt="${data.nombre}">
+                          <img src="${data.imagen}" alt="${data.nombre}" loading="lazy">
                           <div class="info">
                               <h3>${data.nombre}</h3>
                               <p class="price">${data.precio}</p>
