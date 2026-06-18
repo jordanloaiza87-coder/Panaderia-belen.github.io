@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repostería - Panadería Belén</title>
+    <!-- Íconos universales -->
+    <link rel="icon" href="imagen/logo.jpg">
+    <link rel="apple-touch-icon" href="imagen/logo.jpg">
+    <link rel="icon" sizes="192x192" href="imagen/logo.jpg">
+    <link rel="icon" sizes="512x512" href="imagen/logo.jpg">
+    <meta name="apple-mobile-web-app-title" content="Panadería Belén">
+    <meta name="application-name" content="Panadería Belén">
+    <meta name="theme-color" content="#ef6c00">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="imagen/logo.jpg" alt="Logo Belén" style="height: 50px; border-radius: 50%;">
+            <div class="header-text" style="text-align: left;">
+                <h1 style="margin: 0; font-size: 1.5rem;">Repostería Exclusiva</h1>
+                <p style="margin: 0; font-size: 0.9rem;">Tortas y Kuchen</p>
+            </div>
+        </div>
+        <a href="index.html" style="background: white; color: var(--primary); text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; border: 2px solid white; text-align: center;">Volver a Inicio</a>
+    </header>
+
+    <div class="container">
+        <!-- SECCIONES DE REPOSTERÍA -->
+        <h2 class="section-title">TORTAS</h2>
+        <div class="product-grid" id="grid-tortas"></div>
+
+        <h2 class="section-title">KUCHEN</h2>
+        <div class="product-grid" id="grid-kuchen"></div>
+    </div>
+
+    <!-- MODAL PARA VER DETALLE DEL PRODUCTO -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <img id="modalImg" src="" alt="">
+            <div class="modal-details">
+                <h2 id="modalName"></h2>
+                <p id="modalDesc"></p>
+                <div id="modalPrice" class="modal-price"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById("productModal");
+        const closeBtn = document.querySelector(".close-btn");
+        closeBtn.onclick = () => modal.style.display = "none";
+        window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+    </script>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+      import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAfle8tRTuz_33Su2H8fTwjUywRN5VKU7Q",
+        authDomain: "panaderia-belen.firebaseapp.com",
+        projectId: "panaderia-belen",
+        storageBucket: "panaderia-belen.firebasestorage.app",
+        messagingSenderId: "982156401466",
+        appId: "1:982156401466:web:4b8167ae3b676f8b3ece03"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      async function cargarReposteria() {
+          const querySnapshot = await getDocs(collection(db, "productos"));
+          querySnapshot.forEach((docSnap) => {
+              const data = docSnap.data();
+              
+              // Filtramos para que SOLO muestre estas dos categorías
+              if(data.categoria === "TORTAS" || data.categoria === "KUCHEN") {
+                  let contenedorGrilla = null;
+                  
+                  if(data.categoria === "TORTAS") contenedorGrilla = document.getElementById('grid-tortas');
+                  if(data.categoria === "KUCHEN") contenedorGrilla = document.getElementById('grid-kuchen');
+
+                  if(contenedorGrilla) {
+                      const tarjeta = document.createElement('div');
+                      tarjeta.className = 'product-card';
+                      tarjeta.innerHTML = `
+                          <img src="${data.imagen}" alt="${data.nombre}">
+                          <div class="info">
+                              <h3>${data.nombre}</h3>
+                              <p class="price">${data.precio}</p>
+                          </div>
+                      `;
+
+                      tarjeta.addEventListener('click', () => {
+                          document.getElementById("modalImg").src = data.imagen;
+                          document.getElementById("modalName").innerText = data.nombre;
+                          document.getElementById("modalDesc").innerText = data.descripcion || '';
+                          document.getElementById("modalPrice").innerText = data.precio;
+                          document.getElementById("productModal").style.display = "flex";
+                      });
+
+                      contenedorGrilla.prepend(tarjeta);
+                  }
+              }
+          });
+      }
+      cargarReposteria();
+    </script>
+</body>
+</html>
