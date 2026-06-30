@@ -26,8 +26,11 @@
 
     <div class="container">
         <div class="container">
-        
-        <!-- BOTÓN EXCLUSIVO DE REPOSTERÍA -->
+            <div id="pantalla-carga" style="text-align: center; padding: 50px 20px; color: #ef6c00;">
+            <h2 style="font-size: 24px; margin-bottom: 10px;">🍞 Horneando el menú...</h2>
+            <p style="color: #666; font-weight: bold;">Descargando catálogo, por favor espera unos segundos.</p>
+        </div>
+
         <div style="text-align: center; margin-bottom: 30px;">
             <a href="tortas.html" style="display: block; background: linear-gradient(135deg, #ff9800, #e65c00); color: white; padding: 15px 20px; border-radius: 10px; text-decoration: none; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 🎂 Ver Catálogo de pasteleria
@@ -120,7 +123,7 @@
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-      import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+      import { getFirestore, collection, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyAfle8tRTuz_33Su2H8fTwjUywRN5VKU7Q",
@@ -134,18 +137,22 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
+      // ACTIVAMOS LA CACHÉ
+      enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
+
       // FUNCIÓN PARA LEER Y MOSTRAR PRODUCTOS AL PÚBLICO
       async function cargarProductos() {
+          const pantallaCarga = document.getElementById('pantalla-carga');
           try {
               const querySnapshot = await getDocs(collection(db, "productos"));
               
+              if (pantallaCarga) pantallaCarga.style.display = 'none';
+              
               querySnapshot.forEach((docSnap) => {
                   const data = docSnap.data();
-                  
                   const titulos = document.querySelectorAll('.section-title');
                   let contenedorGrilla = null;
                   
-                  // Buscar la fila deslizable que corresponda a la categoría
                   titulos.forEach(h2 => {
                       if(h2.innerText.trim().toUpperCase() === data.categoria.toUpperCase()) {
                           contenedorGrilla = h2.nextElementSibling;
@@ -156,14 +163,13 @@
                       const tarjeta = document.createElement('div');
                       tarjeta.className = 'product-card';
                       tarjeta.innerHTML = `
-                          <img src="${data.imagen}" alt="${data.nombre}" >
+                          <img src="${data.imagen}" alt="${data.nombre}" loading="lazy">
                           <div class="info">
                               <h3>${data.nombre}</h3>
                               <p class="price">${data.precio}</p>
                           </div>
                       `;
 
-                      // Al hacer clic en la tarjeta, se abre el modal con la info detallada
                       tarjeta.addEventListener('click', () => {
                           document.getElementById("modalImg").src = data.imagen;
                           document.getElementById("modalName").innerText = data.nombre;

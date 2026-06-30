@@ -56,6 +56,9 @@
                     <a href="admin_tortas.html" style="background: #ff9800; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🍰 Ir a Pastelería</a>
                 </div>                
                 <form id="form-producto" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button type="button" onclick="window.optimizarBD()" style="width: 100%; background: #4CAF50; color: white; padding: 12px; margin-top: 20px; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                        🚀 MIGRACIÓN AUTOMÁTICA: Optimizar fotos antiguas
+                    </button>
                     <input type="text" id="prod-nombre" placeholder="Nombre del producto" required style="padding: 10px; flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 5px;">
                     <input type="text" id="prod-precio" placeholder="Precio (ej: $1500)" required style="padding: 10px; flex: 1; min-width: 100px; border: 1px solid #ccc; border-radius: 5px;">
                     <input type="text" id="prod-desc" placeholder="Descripción breve" required style="padding: 10px; flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 5px;">
@@ -152,7 +155,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -167,6 +170,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+
+        // ACTIVAMOS LA CACHÉ EN EL ADMIN
+        enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
 
         const loginSection = document.getElementById('login-section');
         const panelAdmin = document.getElementById('panel-admin');
@@ -204,43 +210,15 @@
             }
         });
 
-        // --- MAGIA: COMPRESIÓN DE FOTO A TEXTO (Base64) ---
-        function comprimirImagenAtexto(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = event => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600; 
-                        const MAX_HEIGHT = 600;
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > height) {
-                            if (width > MAX_WIDTH) {
-                                height *= MAX_WIDTH / width;
-                                width = MAX_WIDTH;
-                            }
-                        } else {
-                            if (height > MAX_HEIGHT) {
-                                width *= MAX_HEIGHT / height;
-                                height = MAX_HEIGHT;
-                            }
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        
-                        const textoBase64 = canvas.toDataURL('image/jpeg', 0.7); 
-                        resolve(textoBase64);
-                    };
-                };
-                reader.onerror = error => reject(error);
-            });
+        // --- NUEVO SISTEMA: IMGBB GRATIS Y RÁPIDO ---
+        async function subirFotoAImgBB(archivoOPureBase64) {
+            const formData = new FormData();
+            formData.append("image", archivoOPureBase64);
+            const apiKey = "dfe3b16bcee1c9785e2aef03245ec113"; 
+            const url = `https://api.imgbb.com/1/upload?key=${apiKey}`;
+            const respuesta = await fetch(url, { method: "POST", body: formData });
+            const datos = await respuesta.json();
+            return datos.data.url; 
         }
 
         // --- LÓGICA DE FORMULARIO ---
@@ -264,7 +242,7 @@
             }
 
             btnGuardarForm.disabled = true;
-            btnGuardarForm.innerText = "Procesando foto y guardando...";
+            btnGuardarForm.innerText = "Subiendo imagen a ImgBB... ⏳";
 
             try {
                 let urlImagenFinal = urlImagenActual; 
@@ -272,7 +250,7 @@
                 const urlTexto = document.getElementById('prod-img-url').value.trim();
 
                 if (archivoFoto) {
-                    urlImagenFinal = await comprimirImagenAtexto(archivoFoto);
+                    urlImagenFinal = await subirFotoAImgBB(archivoFoto);
                 } else if (urlTexto !== "") {
                     urlImagenFinal = urlTexto;
                 } else if (!idProductoEditando) {
@@ -281,6 +259,8 @@
                     btnGuardarForm.innerText = "Guardar Producto";
                     return;
                 }
+
+                btnGuardarForm.innerText = "Guardando producto... 💾";
 
                 const datosProducto = {
                     nombre: document.getElementById('prod-nombre').value,
@@ -303,6 +283,7 @@
                 alert("❌ Hubo un error al procesar.");
             } finally {
                 btnGuardarForm.disabled = false;
+                btnGuardarForm.innerText = "Guardar Producto";
             }
         });
 
@@ -326,7 +307,7 @@
                     const tarjeta = document.createElement('div');
                     tarjeta.className = 'product-card';
                     tarjeta.innerHTML = `
-                        <img src="${data.imagen}" alt="${data.nombre}">
+                        <img src="${data.imagen}" alt="${data.nombre}" loading="lazy">
                         <div class="info">
                             <h3>${data.nombre}</h3>
                             <p class="price">${data.precio}</p>
@@ -374,6 +355,34 @@
                 }
             });
         }
+
+        // --- EL BOTÓN MÁGICO PARA MIGRAR LO ANTIGUO ---
+        async function optimizarBaseDeDatos() {
+            const confirmacion = confirm("Esto convertirá tus fotos antiguas en links rápidos de ImgBB. ¿Empezamos?");
+            if (!confirmacion) return;
+
+            const querySnapshot = await getDocs(collection(db, "productos"));
+            let transformadas = 0;
+
+            for (const docSnap of querySnapshot.docs) {
+                const data = docSnap.data();
+                if (data.imagen && data.imagen.startsWith("data:image")) {
+                    console.log(`Optimizando: ${data.nombre}...`);
+                    try {
+                        const pureBase64 = data.imagen.split(",")[1]; 
+                        const nuevaUrl = await subirFotoAImgBB(pureBase64);
+                        await updateDoc(doc(db, "productos", docSnap.id), { imagen: nuevaUrl });
+                        transformadas++;
+                        console.log(`¡${data.nombre} optimizado!`);
+                    } catch (e) {
+                        console.error(`Error optimizando ${data.nombre}`, e);
+                    }
+                }
+            }
+            alert(`¡Proceso terminado! Se optimizaron ${transformadas} fotos. Tu página ya es un cohete 🚀`);
+            cargarProductosAdmin();
+        }
+        window.optimizarBD = optimizarBaseDeDatos;
     </script>
 </body>
 </html>

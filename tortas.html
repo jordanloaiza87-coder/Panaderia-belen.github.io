@@ -28,6 +28,10 @@
     </header>
 
     <div class="container">
+        <div id="pantalla-carga" style="text-align: center; padding: 50px 20px; color: #ef6c00;">
+            <h2 style="font-size: 24px; margin-bottom: 10px;">🍰 Preparando vitrina...</h2>
+            <p style="color: #666; font-weight: bold;">Descargando tortas y kuchenes, por favor espera.</p>
+        </div>
         <!-- SECCIONES DE REPOSTERÍA -->
         <h2 class="section-title">TORTAS</h2>
         <div class="product-grid" id="grid-tortas"></div>
@@ -58,7 +62,7 @@
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-      import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+      import { getFirestore, collection, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyAfle8tRTuz_33Su2H8fTwjUywRN5VKU7Q",
@@ -72,41 +76,50 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
+      enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
+
       async function cargarReposteria() {
-          const querySnapshot = await getDocs(collection(db, "productos"));
-          querySnapshot.forEach((docSnap) => {
-              const data = docSnap.data();
+          const pantallaCarga = document.getElementById('pantalla-carga');
+          try {
+              const querySnapshot = await getDocs(collection(db, "productos"));
               
-              // Filtramos para que SOLO muestre estas dos categorías
-              if(data.categoria === "TORTAS" || data.categoria === "KUCHEN") {
-                  let contenedorGrilla = null;
+              if (pantallaCarga) pantallaCarga.style.display = 'none';
+
+              querySnapshot.forEach((docSnap) => {
+                  const data = docSnap.data();
                   
-                  if(data.categoria === "TORTAS") contenedorGrilla = document.getElementById('grid-tortas');
-                  if(data.categoria === "KUCHEN") contenedorGrilla = document.getElementById('grid-kuchen');
+                  if(data.categoria === "TORTAS" || data.categoria === "KUCHEN") {
+                      let contenedorGrilla = null;
+                      
+                      if(data.categoria === "TORTAS") contenedorGrilla = document.getElementById('grid-tortas');
+                      if(data.categoria === "KUCHEN") contenedorGrilla = document.getElementById('grid-kuchen');
 
-                  if(contenedorGrilla) {
-                      const tarjeta = document.createElement('div');
-                      tarjeta.className = 'product-card';
-                      tarjeta.innerHTML = `
-                          <img src="${data.imagen}" alt="${data.nombre}">
-                          <div class="info">
-                              <h3>${data.nombre}</h3>
-                              <p class="price">${data.precio}</p>
-                          </div>
-                      `;
+                      if(contenedorGrilla) {
+                          const tarjeta = document.createElement('div');
+                          tarjeta.className = 'product-card';
+                          tarjeta.innerHTML = `
+                              <img src="${data.imagen}" alt="${data.nombre}" loading="lazy">
+                              <div class="info">
+                                  <h3>${data.nombre}</h3>
+                                  <p class="price">${data.precio}</p>
+                              </div>
+                          `;
 
-                      tarjeta.addEventListener('click', () => {
-                          document.getElementById("modalImg").src = data.imagen;
-                          document.getElementById("modalName").innerText = data.nombre;
-                          document.getElementById("modalDesc").innerText = data.descripcion || '';
-                          document.getElementById("modalPrice").innerText = data.precio;
-                          document.getElementById("productModal").style.display = "flex";
-                      });
+                          tarjeta.addEventListener('click', () => {
+                              document.getElementById("modalImg").src = data.imagen;
+                              document.getElementById("modalName").innerText = data.nombre;
+                              document.getElementById("modalDesc").innerText = data.descripcion || '';
+                              document.getElementById("modalPrice").innerText = data.precio;
+                              document.getElementById("productModal").style.display = "flex";
+                          });
 
-                      contenedorGrilla.prepend(tarjeta);
+                          contenedorGrilla.prepend(tarjeta);
+                      }
                   }
-              }
-          });
+              });
+          } catch (error) {
+               console.error("Error al cargar repostería: ", error);
+          }
       }
       cargarReposteria();
     </script>
