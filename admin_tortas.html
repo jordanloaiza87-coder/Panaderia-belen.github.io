@@ -59,6 +59,9 @@
                         <option value="">Selecciona Categoría...</option>
                         <option value="TORTAS">TORTAS</option>
                         <option value="KUCHEN">KUCHEN</option>
+                        <option value="EMPANADAS">EMPANADAS</option>
+                        <option value="COSAS DULCES">COSAS DULCES</option>
+                        <option value="FRUTERIA">FRUTERIA</option>
                     </select>
 
                     <div style="flex: 1; min-width: 100%; background: white; padding: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
@@ -83,9 +86,14 @@
             <div id="categorias-container">
                 <h2 class="section-title">TORTAS</h2>
                 <div class="product-grid" id="grid-tortas"></div>
-
                 <h2 class="section-title">KUCHEN</h2>
                 <div class="product-grid" id="grid-kuchen"></div>
+                <h2 class="section-title">EMPANADAS</h2>
+                <div class="product-grid" id="grid-empanadas"></div>
+                <h2 class="section-title">COSAS DULCES</h2>
+                <div class="product-grid" id="grid-cosas-dulces"></div>
+                <h2 class="section-title">FRUTERIA</h2>
+                <div class="product-grid" id="grid-fruteria"></div>
             </div>
         </div>
     </div>
@@ -208,59 +216,72 @@
             }
         });
         // --- CARGAR PASTELERIA ---
+        // --- CARGAR PASTELERIA ---
         async function cargarPasteleriaAdmin() {
             document.getElementById('grid-tortas').innerHTML = '';
             document.getElementById('grid-kuchen').innerHTML = '';
+            document.getElementById('grid-empanadas').innerHTML = '';
+            document.getElementById('grid-cosas-dulces').innerHTML = '';
+            document.getElementById('grid-fruteria').innerHTML = '';
             
             const querySnapshot = await getDocs(collection(db, "productos"));
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 
-                if(data.categoria === "TORTAS" || data.categoria === "KUCHEN") {
-                    let contenedorGrilla = data.categoria === "TORTAS" ? document.getElementById('grid-tortas') : document.getElementById('grid-kuchen');
+                const categoriasValidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES", "FRUTERIA"];
+                
+                if(categoriasValidas.includes(data.categoria)) {
+                    let contenedorGrilla = null;
+                    if(data.categoria === "TORTAS") contenedorGrilla = document.getElementById('grid-tortas');
+                    if(data.categoria === "KUCHEN") contenedorGrilla = document.getElementById('grid-kuchen');
+                    if(data.categoria === "EMPANADAS") contenedorGrilla = document.getElementById('grid-empanadas');
+                    if(data.categoria === "COSAS DULCES") contenedorGrilla = document.getElementById('grid-cosas-dulces');
+                    if(data.categoria === "FRUTERIA") contenedorGrilla = document.getElementById('grid-fruteria');
 
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'product-card';
-                    tarjeta.innerHTML = `
-                        <img src="${data.imagen}" alt="${data.nombre}" >
-                        <div class="info">
-                            <h3>${data.nombre}</h3>
-                            <p class="price">${data.precio}</p>
-                            <p style="color: #2e7d32; font-weight: bold; margin: 5px 0; font-size: 14px;">Stock: ${data.stock || 'Sin definir'}</p>
-                            <div style="display: flex; gap: 5px; margin-top: 10px;">
-                                <button class="btn-editar" style="background: #2196F3; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Editar</button>
-                                <button class="btn-eliminar" style="background: #f44336; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Borrar</button>
+                    if(contenedorGrilla) {
+                        const tarjeta = document.createElement('div');
+                        tarjeta.className = 'product-card';
+                        tarjeta.innerHTML = `
+                            <img src="${data.imagen}" alt="${data.nombre}" >
+                            <div class="info">
+                                <h3>${data.nombre}</h3>
+                                <p class="price">${data.precio}</p>
+                                <p style="color: #2e7d32; font-weight: bold; margin: 5px 0; font-size: 14px;">Stock: ${data.stock || 'Sin definir'}</p>
+                                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                    <button class="btn-editar" style="background: #2196F3; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Editar</button>
+                                    <button class="btn-eliminar" style="background: #f44336; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Borrar</button>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
 
-                    tarjeta.querySelector('.btn-eliminar').addEventListener('click', async () => {
-                        if(confirm(`⚠️ ¿Deseas eliminar "${data.nombre}"?`)) {
-                            await deleteDoc(doc(db, "productos", docSnap.id));
-                            cargarPasteleriaAdmin();
-                        }
-                    });
+                        tarjeta.querySelector('.btn-eliminar').addEventListener('click', async () => {
+                            if(confirm(`⚠️ ¿Deseas eliminar "${data.nombre}"?`)) {
+                                await deleteDoc(doc(db, "productos", docSnap.id));
+                                cargarPasteleriaAdmin();
+                            }
+                        });
 
-                    tarjeta.querySelector('.btn-editar').addEventListener('click', () => {
-                        document.getElementById('prod-nombre').value = data.nombre;
-                        document.getElementById('prod-precio').value = data.precio;
-                        document.getElementById('prod-stock').value = data.stock || '';
-                        document.getElementById('prod-desc').value = data.descripcion || '';
-                        document.getElementById('prod-categoria').value = data.categoria;
-                        
-                        urlImagenActual = data.imagen; 
-                        document.getElementById('prod-img-file').value = ''; 
-                        if(data.imagen && !data.imagen.startsWith('data:image')) document.getElementById('prod-img-url').value = data.imagen; 
-                        else document.getElementById('prod-img-url').value = '';
-                        
-                        idProductoEditando = docSnap.id;
-                        btnGuardarForm.innerText = "🔄 Actualizar Producto";
-                        btnGuardarForm.style.background = "#2196F3";
-                        btnCancelarEdicion.style.display = 'block';
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    });
+                        tarjeta.querySelector('.btn-editar').addEventListener('click', () => {
+                            document.getElementById('prod-nombre').value = data.nombre;
+                            document.getElementById('prod-precio').value = data.precio;
+                            document.getElementById('prod-stock').value = data.stock || '';
+                            document.getElementById('prod-desc').value = data.descripcion || '';
+                            document.getElementById('prod-categoria').value = data.categoria;
+                            
+                            urlImagenActual = data.imagen; 
+                            document.getElementById('prod-img-file').value = ''; 
+                            if(data.imagen && !data.imagen.startsWith('data:image')) document.getElementById('prod-img-url').value = data.imagen; 
+                            else document.getElementById('prod-img-url').value = '';
+                            
+                            idProductoEditando = docSnap.id;
+                            btnGuardarForm.innerText = "🔄 Actualizar Producto";
+                            btnGuardarForm.style.background = "#2196F3";
+                            btnCancelarEdicion.style.display = 'block';
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        });
 
-                    contenedorGrilla.prepend(tarjeta);
+                        contenedorGrilla.prepend(tarjeta);
+                    }
                 }
             });
         }

@@ -33,11 +33,17 @@
             <p style="color: #666; font-weight: bold;">Descargando tortas y kuchenes, por favor espera.</p>
         </div>
         <!-- SECCIONES DE REPOSTERÍA -->
+        <!-- SECCIONES DE REPOSTERÍA -->
         <h2 class="section-title">TORTAS</h2>
         <div class="product-grid" id="grid-tortas"></div>
-
         <h2 class="section-title">KUCHEN</h2>
         <div class="product-grid" id="grid-kuchen"></div>
+        <h2 class="section-title">EMPANADAS</h2>
+        <div class="product-grid" id="grid-empanadas"></div>
+        <h2 class="section-title">COSAS DULCES</h2>
+        <div class="product-grid" id="grid-cosas-dulces"></div>
+        <h2 class="section-title">FRUTERIA</h2>
+        <div class="product-grid" id="grid-fruteria"></div>
     </div>
 
     <!-- MODAL PARA VER DETALLE DEL PRODUCTO -->
@@ -88,20 +94,32 @@
               querySnapshot.forEach((docSnap) => {
                   const data = docSnap.data();
                   
-                  if(data.categoria === "TORTAS" || data.categoria === "KUCHEN") {
+                  const categoriasValidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES", "FRUTERIA"];
+                  
+                  if(categoriasValidas.includes(data.categoria)) {
                       let contenedorGrilla = null;
                       
                       if(data.categoria === "TORTAS") contenedorGrilla = document.getElementById('grid-tortas');
                       if(data.categoria === "KUCHEN") contenedorGrilla = document.getElementById('grid-kuchen');
+                      if(data.categoria === "EMPANADAS") contenedorGrilla = document.getElementById('grid-empanadas');
+                      if(data.categoria === "COSAS DULCES") contenedorGrilla = document.getElementById('grid-cosas-dulces');
+                      if(data.categoria === "FRUTERIA") contenedorGrilla = document.getElementById('grid-fruteria');
 
                       if(contenedorGrilla) {
                           const tarjeta = document.createElement('div');
                           tarjeta.className = 'product-card';
+
+                          let textoStock = `<p style="color: #2e7d32; font-size: 13px; font-weight: bold; margin: 5px 0;">✅ Stock: ${data.stock}</p>`;
+                          if (!data.stock || data.stock <= 0) {
+                              textoStock = `<p style="color: #d32f2f; font-size: 13px; font-weight: bold; margin: 5px 0;">❌ Agotado</p>`;
+                          }
+
                           tarjeta.innerHTML = `
                               <img src="${data.imagen}" alt="${data.nombre}" loading="lazy">
                               <div class="info">
                                   <h3>${data.nombre}</h3>
                                   <p class="price">${data.precio}</p>
+                                  ${textoStock}
                               </div>
                           `;
 
