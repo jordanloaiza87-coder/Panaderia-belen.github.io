@@ -26,13 +26,15 @@
 
     <div class="container">
         <div class="container">
+            <div style="margin: 25px 0 25px 0; text-align: center;">
+            <input type="text" id="buscador-productos" placeholder=" Buscar pan, bebidas, dulces..." style="width: 100%; max-width: 500px; padding: 14px 20px; border: 2px solid #ef6c00; border-radius: 25px; font-size: 16px; outline: none; box-shadow: 0 4px 10px rgba(0,0,0,0.08); transition: 0.3s;">
+        </div>
             <div id="pantalla-carga" style="text-align: center; padding: 50px 20px; color: #ef6c00;">
             <h2 style="font-size: 24px; margin-bottom: 10px;">🍞 Horneando el menú...</h2>
             <p style="color: #666; font-weight: bold;">Descargando catálogo, por favor espera unos segundos.</p>
         </div>
 
-        <div style="text-align: center; margin-bottom: 30px;">
-            <a href="tortas.html" style="display: block; background: linear-gradient(135deg, #ff9800, #e65c00); color: white; padding: 15px 20px; border-radius: 10px; text-decoration: none; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div style="text-align: center; margin-bottom: 30px;">            <a href="tortas.html" style="display: block; background: linear-gradient(135deg, #ff9800, #e65c00); color: white; padding: 15px 20px; border-radius: 10px; text-decoration: none; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 🎂 Ver Catálogo de pasteleria
             </a>
         </div>
@@ -97,6 +99,9 @@
         <div class="product-grid"></div>
 
         <h2 class="section-title">DULCES</h2>
+        <div class="product-grid"></div>
+        
+        <h2 class="section-title">FRUTERIA</h2>
         <div class="product-grid"></div>
     </div>
 
@@ -187,6 +192,39 @@
       }
 
       cargarProductos();
+      // --- BUSCADOR EN TIEMPO REAL ---
+      const buscador = document.getElementById('buscador-productos');
+      if (buscador) {
+          buscador.addEventListener('input', (e) => {
+              const textoBuscado = e.target.value.toLowerCase().trim();
+              const todasLasTarjetas = document.querySelectorAll('.product-card');
+
+              todasLasTarjetas.forEach(tarjeta => {
+                  const nombreProducto = tarjeta.querySelector('h3').innerText.toLowerCase();
+                  if (nombreProducto.includes(textoBuscado)) {
+                      tarjeta.style.display = '';
+                  } else {
+                      tarjeta.style.display = 'none';
+                  }
+              });
+
+              // Ocultar títulos Y grillas vacías para evitar espacios gigantes
+              document.querySelectorAll('.section-title').forEach(titulo => {
+                  const grilla = titulo.nextElementSibling;
+                  if (grilla && grilla.classList.contains('product-grid')) {
+                      const tarjetasVisibles = grilla.querySelectorAll('.product-card:not([style*="display: none"])');
+                      
+                      if (tarjetasVisibles.length === 0 && textoBuscado !== "") {
+                          titulo.style.display = 'none';
+                          grilla.style.display = 'none'; // <-- ¡ESTO QUITA EL ESPACIO VACÍO!
+                      } else {
+                          titulo.style.display = '';
+                          grilla.style.display = '';
+                      }
+                  }
+              });
+          });
+      }
     </script>
 </body>
 </html>
