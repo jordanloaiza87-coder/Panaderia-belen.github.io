@@ -50,14 +50,20 @@
         </div>
 
         <div id="panel-admin">
+            <div style="background: #e3f2fd; padding: 20px; margin-bottom: 30px; border-radius: 10px; border: 2px dashed #2196F3;">
+                <h2 style="color: #1565c0; margin: 0 0 10px 0;"> Historial de Cambios</h2>
+                <div id="lista-historial" style="max-height: 200px; overflow-y: auto; background: white; padding: 15px; border-radius: 5px; border: 1px solid #ccc; font-family: monospace;">
+                    Cargando historial...
+                </div>
+            </div>
             <div style="background: #ffe0b2; padding: 25px; margin-bottom: 30px; border-radius: 10px; border: 2px dashed #ef6c00;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h2 style="color: #ef6c00; margin: 0;">Formulario de Productos</h2>
-                    <a href="admin_tortas.html" style="background: #ff9800; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🍰 Ir a Pastelería</a>
+                    <a href="admin_tortas.html" style="background: #ff9800; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"> Ir a Pastelería</a>
                 </div>                
                 <form id="form-producto" style="display: flex; flex-wrap: wrap; gap: 10px;">
                     <button type="button" onclick="window.optimizarBD()" style="width: 100%; background: #4CAF50; color: white; padding: 12px; margin-top: 20px; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px;">
-                        🚀 MIGRACIÓN AUTOMÁTICA: Optimizar fotos antiguas
+                         MIGRACIÓN AUTOMÁTICA: Optimizar fotos antiguas
                     </button>
                     <input type="text" id="prod-nombre" placeholder="Nombre del producto" required style="padding: 10px; flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 5px;">
                     <input type="text" id="prod-precio" placeholder="Precio (ej: $1500)" required style="padding: 10px; flex: 1; min-width: 100px; border: 1px solid #ccc; border-radius: 5px;">
@@ -205,13 +211,67 @@
                 loginSection.style.display = 'none';
                 panelAdmin.style.display = 'block';
                 btnLogout.style.display = 'block';
-                cargarProductosAdmin(); 
+                cargarProductosAdmin();
+                cargarHistorial();
             } else {
                 loginSection.style.display = 'block';
                 panelAdmin.style.display = 'none';
                 btnLogout.style.display = 'none';
             }
         });
+
+        // --- SISTEMA DE HISTORIAL (AUDITORÍA) ---
+        async function registrarHistorial(accion, nombreProducto) {
+            try {
+                const usuario = auth.currentUser ? auth.currentUser.email : "Desconocido";
+                // Usamos formato local para asegurar la zona horaria correcta
+                const fecha = new Date().toLocaleString("es-CL"); 
+                
+                await addDoc(collection(db, "historial"), {
+                    usuario: usuario,
+                    accion: accion,
+                    producto: nombreProducto,
+                    fecha: fecha,
+                    timestamp: Date.now()
+                });
+                cargarHistorial(); 
+            } catch (error) {
+                console.error("Error al registrar historial:", error);
+            }
+        }
+
+        async function cargarHistorial() {
+            const contenedor = document.getElementById('lista-historial');
+            if(!contenedor) return;
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "historial"));
+                let registros = [];
+                querySnapshot.forEach(doc => registros.push(doc.data()));
+                
+                registros.sort((a, b) => b.timestamp - a.timestamp); // Más recientes primero
+
+                if(registros.length === 0) {
+                    contenedor.innerHTML = 'No hay movimientos registrados aún.';
+                    return;
+                }
+
+                contenedor.innerHTML = '';
+                registros.forEach(reg => {
+                    let color = reg.accion === "AGREGAR" ? "#2e7d32" : (reg.accion === "ELIMINAR" ? "#d32f2f" : "#ef6c00");
+                    contenedor.innerHTML += `
+                        <div style="border-bottom: 1px solid #eee; padding: 8px 0; font-size: 14px;">
+                            <span style="color: #666;">[${reg.fecha}]</span> 
+                            <strong>👤 ${reg.usuario}</strong>: 
+                            <span style="color: ${color}; font-weight: bold;">${reg.accion}</span> 
+                            el producto <em>"${reg.producto}"</em>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error al cargar historial:", error);
+            }
+        }
 
         // --- NUEVO SISTEMA: IMGBB GRATIS Y RÁPIDO ---
         async function subirFotoAImgBB(archivoOPureBase64) {
@@ -275,8 +335,10 @@
 
                 if (idProductoEditando) {
                     await updateDoc(doc(db, "productos", idProductoEditando), datosProducto);
+                    await registrarHistorial("EDITAR", datosProducto.nombre);
                 } else {
                     await addDoc(collection(db, "productos"), datosProducto);
+                    await registrarHistorial("AGREGAR", datosProducto.nombre);
                 }
                 
                 resetearFormulario();
@@ -328,6 +390,7 @@
                                 signOut(auth); return;
                             }
                             await deleteDoc(doc(db, "productos", docSnap.id));
+                            await registrarHistorial("ELIMINAR", data.nombre);
                             cargarProductosAdmin();
                         }
                     });
