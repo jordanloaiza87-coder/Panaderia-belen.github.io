@@ -127,61 +127,19 @@
                 <!-- Lista donde aparecerán las categorías -->
                 <div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #ccc;">
                     <h3 style="margin-top: 0; color: #333; font-size: 16px;">Categorías Actuales</h3>
-                     <div id="lista-categorias-admin" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
-                    <p style="color: #666; font-style: italic; margin: 0;">Cargando categorías...</p>
+                    <div id="lista-categorias-admin" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                        <p style="color: #666; font-style: italic; margin: 0;">Cargando categorías...</p>
                     </div>
                 </div>
-            </div>
+            </div> <!-- FIN CAJA VERDE (Gestor de categorías) -->
 
-            <div id="categorias-container">
-                <h2 class="section-title">PAN</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">SUPERMERCADO</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">SUPERMERCADO 2</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">SUPERMERCADO 3</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">GALLETAS</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">CONGELADOS DIMAK</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">PACEL</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">LLANQUIHUE</h2>
-                <div class="product-grid"></div> 
-                <h2 class="section-title">PAN IDEAL</h2>  
-                <div class="product-grid"></div>
-                <h2 class="section-title">CALO(WHATTS)</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">SAN JORGE</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">SOPROLE</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">DIMAK</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">CASTAÑO</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">COLUN</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">MARCOPOLO</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">AGROSUPEI</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">BOMBONES Y CHOCOLATE</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">MEDICAMENTOS</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">BEBIDAS</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">DULCES</h2>
-                <div class="product-grid"></div>
-                <h2 class="section-title">FRUTERIA</h2>
-                <div class="product-grid"></div>
-            </div>
-        </div>
-    </div>
+            <!-- CONTENEDOR DE PRODUCTOS -->
+            <div id="categorias-container"></div>
 
+        </div> <!-- 🔴 FIN DEL PANEL DE ADMINISTRACIÓN -->
+    </div> <!-- FIN DEL CONTAINER GENERAL -->
+
+            
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
