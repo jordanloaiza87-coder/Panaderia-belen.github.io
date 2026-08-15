@@ -112,6 +112,26 @@
                     <button type="button" id="btn-cancelar-edicion" style="display: none; background: #999; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; font-size: 16px;">Cancelar Edición</button>
                 </form>
             </div>
+            <div style="background: #e8f5e9; padding: 25px; margin-bottom: 30px; border-radius: 10px; border: 2px dashed #4caf50;">
+                <h2 style="color: #2e7d32; margin: 0 0 15px 0;"> Gestor de Categorías</h2>
+                
+                <!-- Formulario para agregar o editar -->
+                <form id="form-categoria" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                    <input type="hidden" id="cat-id-oculto" value="">
+                    <input type="text" id="cat-nombre" placeholder="Nueva categoría (ej: BEBIDAS)" required style="padding: 10px; flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 5px; text-transform: uppercase;">
+                    
+                    <button type="submit" id="btn-guardar-cat" style="background: #4caf50; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; font-size: 16px;">Agregar Categoría</button>
+                    <button type="button" id="btn-cancelar-cat" style="display: none; background: #999; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; font-size: 16px;">Cancelar</button>
+                </form>
+
+                <!-- Lista donde aparecerán las categorías -->
+                <div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #ccc;">
+                    <h3 style="margin-top: 0; color: #333; font-size: 16px;">Categorías Actuales</h3>
+                     <div id="lista-categorias-admin" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
+                    <p style="color: #666; font-style: italic; margin: 0;">Cargando categorías...</p>
+                    </div>
+                </div>
+            </div>
 
             <div id="categorias-container">
                 <h2 class="section-title">PAN</h2>
@@ -193,6 +213,15 @@
         
         let idProductoEditando = null;
         let urlImagenActual = ""; 
+        
+        const formCategoria = document.getElementById('form-categoria');
+        const inputCatNombre = document.getElementById('cat-nombre');
+        const idCatOculto = document.getElementById('cat-id-oculto');
+        const btnGuardarCat = document.getElementById('btn-guardar-cat');
+        const btnCancelarCat = document.getElementById('btn-cancelar-cat');
+        const listaCategoriasAdmin = document.getElementById('lista-categorias-admin');
+        const selectCategoria = document.getElementById('prod-categoria'); 
+        const categoriasContainer = document.getElementById('categorias-container');
 
         // --- AUTENTICACIÓN ---
         document.getElementById('btn-login').addEventListener('click', () => {
@@ -211,7 +240,7 @@
                 loginSection.style.display = 'none';
                 panelAdmin.style.display = 'block';
                 btnLogout.style.display = 'block';
-                cargarProductosAdmin();
+                cargarCategorias();
                 cargarHistorial();
             } else {
                 loginSection.style.display = 'block';
@@ -219,6 +248,151 @@
                 btnLogout.style.display = 'none';
             }
         });
+        // ==========================================
+        // LÓGICA DEL GESTOR DE CATEGORÍAS (CRUD)
+        // ==========================================
+        let nombreCategoriaAntiguo = ""; // 💡 NUEVO: Variable para recordar el nombre viejo
+
+        async function cargarCategorias() {
+            const querySnapshot = await getDocs(collection(db, "categorias"));
+            let categorias = [];
+            querySnapshot.forEach(doc => {
+                categorias.push({ id: doc.id, nombre: doc.data().nombre });
+            });
+
+            // Ordenar alfabéticamente
+            categorias.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            // Limpiamos las estructuras visuales antiguas
+            listaCategoriasAdmin.innerHTML = '';
+            selectCategoria.innerHTML = '<option value="">Selecciona Categoría...</option>';
+            categoriasContainer.innerHTML = ''; 
+
+            if (categorias.length === 0) {
+                listaCategoriasAdmin.innerHTML = '<p style="color: #666; font-style: italic; margin: 0;">No hay categorías aún. ¡Agrega la primera arriba! (Ej: PAN)</p>';
+            }
+
+            categorias.forEach(cat => {
+                // 1. Inyectar en la lista del panel administrador
+                const item = document.createElement('div');
+                item.style = "display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f9f9f9; border: 1px solid #eee; border-radius: 5px;";
+                item.innerHTML = `
+                    <span style="font-weight: bold; color: #333;">${cat.nombre}</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn-edit-cat" data-id="${cat.id}" data-nombre="${cat.nombre}" style="background: #2196F3; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">✏️ Editar</button>
+                        <button class="btn-del-cat" data-id="${cat.id}" data-nombre="${cat.nombre}" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">🗑️ Borrar</button>
+                    </div>
+                `;
+                listaCategoriasAdmin.appendChild(item);
+
+                // 2. Inyectar en el <select>
+                const option = document.createElement('option');
+                option.value = cat.nombre;
+                option.textContent = cat.nombre;
+                selectCategoria.appendChild(option);
+
+                // 3. Crear el contenedor de productos
+                const h2 = document.createElement('h2');
+                h2.className = 'section-title';
+                h2.textContent = cat.nombre;
+                const divGrid = document.createElement('div');
+                divGrid.className = 'product-grid';
+                categoriasContainer.appendChild(h2);
+                categoriasContainer.appendChild(divGrid);
+            });
+
+            // Eventos para el botón Editar
+            document.querySelectorAll('.btn-edit-cat').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    idCatOculto.value = e.target.getAttribute('data-id');
+                    
+                    // 💡 NUEVO: Guardamos el nombre viejo antes de editarlo
+                    nombreCategoriaAntiguo = e.target.getAttribute('data-nombre'); 
+                    
+                    inputCatNombre.value = nombreCategoriaAntiguo;
+                    btnGuardarCat.innerText = 'Actualizar Categoría';
+                    btnGuardarCat.style.background = '#2196F3';
+                    btnCancelarCat.style.display = 'block';
+                    inputCatNombre.focus();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+
+            // Eventos para el botón Borrar
+            document.querySelectorAll('.btn-del-cat').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const nombre = e.target.getAttribute('data-nombre');
+                    if(confirm(`⚠️ ¿Seguro que deseas eliminar la categoría "${nombre}"?\n(Tus productos no se borrarán, pero dejarán de verse hasta que crees la categoría de nuevo).`)) {
+                        await deleteDoc(doc(db, "categorias", id));
+                        cargarCategorias(); 
+                    }
+                });
+            });
+
+            cargarProductosAdmin();
+        }
+
+        // --- SUBMIT DEL FORMULARIO VERDE ---
+        formCategoria.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombreCat = inputCatNombre.value.trim().toUpperCase();
+            const idCat = idCatOculto.value;
+
+            btnGuardarCat.disabled = true;
+            btnGuardarCat.innerText = "Guardando... ⏳";
+
+            try {
+                if (idCat) {
+                    // 1. Actualizamos la categoría
+                    await updateDoc(doc(db, "categorias", idCat), { nombre: nombreCat });
+                    await registrarHistorial("EDITAR CAT.", nombreCat);
+
+                    // 💡 2. EL EFECTO DOMINÓ: Buscamos todos los productos que tenían el nombre viejo y lo actualizamos al nuevo
+                    const productosSnap = await getDocs(collection(db, "productos"));
+                    const promesasActualizacion = [];
+                    
+                    productosSnap.forEach((docProd) => {
+                        if (docProd.data().categoria === nombreCategoriaAntiguo) {
+                            // Preparamos la actualización para cada producto
+                            promesasActualizacion.push(updateDoc(doc(db, "productos", docProd.id), { categoria: nombreCat }));
+                        }
+                    });
+                    
+                    // Esperamos a que todos los productos se actualicen al mismo tiempo (súper rápido)
+                    await Promise.all(promesasActualizacion);
+
+                } else {
+                    await addDoc(collection(db, "categorias"), { nombre: nombreCat });
+                    await registrarHistorial("AGREGAR CAT.", nombreCat);
+                }
+                
+                formCategoria.reset();
+                idCatOculto.value = "";
+                nombreCategoriaAntiguo = ""; // Limpiamos la variable
+                btnGuardarCat.innerText = "Agregar Categoría";
+                btnGuardarCat.style.background = "#4caf50";
+                btnCancelarCat.style.display = 'none';
+
+                cargarCategorias();
+            } catch (error) {
+                console.error("Error:", error);
+                alert("❌ Error al guardar categoría.");
+            } finally {
+                btnGuardarCat.disabled = false;
+            }
+        });
+
+        // --- BOTÓN CANCELAR EDICIÓN VERDE ---
+        btnCancelarCat.addEventListener('click', () => {
+            formCategoria.reset();
+            idCatOculto.value = "";
+            nombreCategoriaAntiguo = "";
+            btnGuardarCat.innerText = "Agregar Categoría";
+            btnGuardarCat.style.background = "#4caf50";
+            btnCancelarCat.style.display = 'none';
+        });
+        // ==========================================
 
         // --- SISTEMA DE HISTORIAL (AUDITORÍA) ---
         async function registrarHistorial(accion, nombreProducto) {

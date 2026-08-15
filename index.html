@@ -38,71 +38,7 @@
                  Ver Catálogo de pasteleria
             </a>
         </div>
-        <h2 class="section-title">PAN</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">SUPERMERCADO</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">SUPERMERCADO 2</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">SUPERMERCADO 3</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">GALLETAS</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">CONGELADOS DIMAK</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">PACEL</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">LLANQUIHUE</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">PAN IDEAL</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">CALO(WHATTS)</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">SAN JORGE</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">SOPROLE</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">DIMAK</h2>
-        <div class="product-grid"></div> 
-
-        <h2 class="section-title">CASTAÑO</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">COLUN</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">MARCOPOLO</h2>
-        <div class="product-grid"></div>
- 
-        <h2 class="section-title">AGROSUPEI</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">BOMBONES Y CHOCOLATE</h2>
-        <div class="product-grid"></div>
-        
-        <h2 class="section-title">MEDICAMENTOS</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">BEBIDAS</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">DULCES</h2>
-        <div class="product-grid"></div>
-
-        <h2 class="section-title">FRUTERIA</h2>
-        <div class="product-grid"></div>
+        <div id="categorias-container"></div>
     </div>
 
     <div id="productModal" class="modal">
@@ -145,24 +81,69 @@
       // ACTIVAMOS LA CACHÉ
       enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
 
-      // FUNCIÓN PARA LEER Y MOSTRAR PRODUCTOS AL PÚBLICO
-      async function cargarProductos() {
+      // FUNCIÓN PARA LEER CATEGORÍAS Y PRODUCTOS DINÁMICAMENTE (CON FILTRO DE PASTELERÍA)
+      async function cargarCategoriasYProductos() {
           const pantallaCarga = document.getElementById('pantalla-carga');
+          const categoriasContainer = document.getElementById('categorias-container');
+          
+          // 💡 EL FILTRO: Lista de categorías que NO queremos que salgan en el inicio
+          const categoriasExcluidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES"];
+
           try {
-              const querySnapshot = await getDocs(collection(db, "productos"));
+              // 1. Descargamos TODOS los productos primero
+              const prodSnapshot = await getDocs(collection(db, "productos"));
+              let productos = [];
+              let categoriasUnicas = new Set();
+
+              prodSnapshot.forEach((docSnap) => {
+                  const data = docSnap.data();
+                  if (data.categoria) {
+                      const catUpper = data.categoria.trim().toUpperCase();
+                      
+                      // Solo lo guardamos si NO está en la lista de excluidas
+                      if (!categoriasExcluidas.includes(catUpper)) {
+                          productos.push(data);
+                          categoriasUnicas.add(catUpper);
+                      }
+                  }
+              });
+
+              // 2. También descargamos las categorías oficiales del admin
+              const catSnapshot = await getDocs(collection(db, "categorias"));
+              catSnapshot.forEach(doc => {
+                  const catUpper = doc.data().nombre.trim().toUpperCase();
+                  // Solo la agregamos si NO es de pastelería
+                  if (!categoriasExcluidas.includes(catUpper)) {
+                      categoriasUnicas.add(catUpper);
+                  }
+              });
               
+              // Convertimos a lista y ordenamos alfabéticamente
+              let categorias = Array.from(categoriasUnicas).sort();
+              
+              // 3. Limpiamos y creamos los contenedores visuales
+              if(categoriasContainer) categoriasContainer.innerHTML = '';
+              categorias.forEach(catNombre => {
+                  const h2 = document.createElement('h2');
+                  h2.className = 'section-title';
+                  h2.textContent = catNombre;
+                  
+                  const divGrid = document.createElement('div');
+                  divGrid.className = 'product-grid';
+                  divGrid.id = 'grid-' + catNombre.replace(/\s+/g, '-'); 
+                  
+                  if(categoriasContainer) {
+                      categoriasContainer.appendChild(h2);
+                      categoriasContainer.appendChild(divGrid);
+                  }
+              });
+
               if (pantallaCarga) pantallaCarga.style.display = 'none';
               
-              querySnapshot.forEach((docSnap) => {
-                  const data = docSnap.data();
-                  const titulos = document.querySelectorAll('.section-title');
-                  let contenedorGrilla = null;
-                  
-                  titulos.forEach(h2 => {
-                      if(h2.innerText.trim().toUpperCase() === data.categoria.toUpperCase()) {
-                          contenedorGrilla = h2.nextElementSibling;
-                      }
-                  });
+              // 4. Repartimos los productos en sus respectivas cajas
+              productos.forEach((data) => {
+                  const idGrilla = 'grid-' + data.categoria.trim().toUpperCase().replace(/\s+/g, '-');
+                  const contenedorGrilla = document.getElementById(idGrilla);
 
                   if(contenedorGrilla) {
                       const tarjeta = document.createElement('div');
@@ -186,12 +167,24 @@
                       contenedorGrilla.prepend(tarjeta);
                   }
               });
+
+              // 5. Ocultar categorías vacías
+              document.querySelectorAll('.section-title').forEach(titulo => {
+                  const grilla = titulo.nextElementSibling;
+                  if (grilla && grilla.children.length === 0) {
+                      titulo.style.display = 'none';
+                      grilla.style.display = 'none';
+                  }
+              });
+
           } catch (error) {
-              console.error("Error al cargar los productos para el público: ", error);
+              console.error("Error al cargar los datos: ", error);
+              if (pantallaCarga) pantallaCarga.innerHTML = '<p style="color:red; font-weight:bold;">Hubo un error al cargar.</p>';
           }
       }
 
-      cargarProductos();
+      cargarCategoriasYProductos();
+      
       // --- BUSCADOR EN TIEMPO REAL ---
       const buscador = document.getElementById('buscador-productos');
       if (buscador) {
