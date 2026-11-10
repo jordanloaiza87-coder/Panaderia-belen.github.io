@@ -7,7 +7,7 @@ const ASSETS_TO_CACHE = [
     './tortas.html',
     './style.css',
     './manifest.json',
-    './imagen/logo.jpg',
+    './imagen/logo.png',
     './imagen/apple-touch-icon.png',
     './imagen/icon-192.png',
     './imagen/icon-512.png'
