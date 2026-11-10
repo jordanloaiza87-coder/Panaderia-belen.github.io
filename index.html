@@ -1,49 +1,75 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="icon" href="imagen/logo.jpg">
-    <link rel="apple-touch-icon" href="imagen/logo.jpg">
-    <link rel="icon" sizes="192x192" href="imagen/logo.jpg">
-    <link rel="icon" sizes="512x512" href="imagen/logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Panadería Belén - Catálogo</title>
+    <link rel="preconnect" href="https://wsrv.nl" crossorigin>
+    <link rel="preconnect" href="https://i.ibb.co" crossorigin>
+    <link rel="dns-prefetch" href="https://i.ibb.co">
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+
+    <!-- Íconos para iPhone (iOS) y Android + PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="imagen/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="imagen/icon-512.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="imagen/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-title" content="Panadería Belén">
     <meta name="application-name" content="Panadería Belén">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#ef6c00">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <img src="imagen/logo.jpg" alt="Logo Belén" class="logo-header">
-        <div class="header-text">
-            <h1>Panadería Belén</h1>
-            <p>Desliza para ver nuestros productos</p>
+        <div class="header-brand">
+            <img src="imagen/apple-touch-icon.png" alt="Logo Belén" class="logo-header">
+            <div class="header-text">
+                <h1>Panadería Belén</h1>
+                <p>Productos frescos todos los días</p>
+            </div>
         </div>
-        
-        <a href="admin.html" style="margin-left: auto; background: white; color: var(--primary); text-decoration: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; transition: 0.3s; border: 2px solid white;">Iniciar Sesión</a>
+        <div class="header-actions">
+            <button id="btn-instalar-app" class="btn-header btn-install" style="display: none;">Instalar App</button>
+            <a href="admin.html" class="btn-header">Iniciar Sesión</a>
+        </div>
     </header>
 
     <div class="container">
-        <div class="container">
-            <div style="margin: 25px 0 25px 0; text-align: center;">
-            <input type="text" id="buscador-productos" placeholder=" Buscar pan, bebidas, dulces..." style="width: 100%; max-width: 500px; padding: 14px 20px; border: 2px solid #ef6c00; border-radius: 25px; font-size: 16px; outline: none; box-shadow: 0 4px 10px rgba(0,0,0,0.08); transition: 0.3s;">
-        </div>
-            <div id="pantalla-carga" style="text-align: center; padding: 50px 20px; color: #ef6c00;">
-            <h2 style="font-size: 24px; margin-bottom: 10px;"> Horneando el menú...</h2>
-            <p style="color: #666; font-weight: bold;">Descargando catálogo, por favor espera unos segundos.</p>
+        <a href="tortas.html" class="banner-pasteleria">
+            <span>Catálogo de Pastelería y Tortas</span>
+            <span class="banner-arrow">Ver todo →</span>
+        </a>
+
+        <div class="sticky-controls">
+            <div class="search-wrapper">
+                <input type="search" id="buscador-productos" class="search-input" placeholder="Buscar pan, bebidas, lácteos, dulces...">
+            </div>
+            <div id="filtros-categorias" class="category-chips"></div>
         </div>
 
-        <div style="text-align: center; margin-bottom: 30px;">            <a href="tortas.html" style="display: block; background: linear-gradient(135deg, #ff9800, #e65c00); color: white; padding: 15px 20px; border-radius: 10px; text-decoration: none; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                 Ver Catálogo de pasteleria
-            </a>
+        <div id="pantalla-carga" class="loading-box">
+            <h2>Horneando el menú...</h2>
+            <p>Descargando catálogo, por favor espera unos segundos.</p>
         </div>
+
+        <div id="sin-resultados" class="empty-search-box" style="display: none;">
+            <h3>No encontramos productos</h3>
+            <p>Intenta buscar con otra palabra o selecciona otra categoría.</p>
+        </div>
+
         <div id="categorias-container"></div>
     </div>
 
+    <div id="offline-toast" class="offline-toast">Catálogo guardado en tu celular para carga rápida</div>
+
     <div id="productModal" class="modal">
         <div class="modal-content">
-            <span class="close-btn">&times;</span>
+            <span class="close-btn" title="Cerrar">&times;</span>
             <img id="modalImg" src="" alt="">
             <div class="modal-details">
                 <h2 id="modalName"></h2>
@@ -54,170 +80,297 @@
     </div>
 
     <script>
-        // Lógica para cerrar el modal interactivo
         const modal = document.getElementById("productModal");
         const closeBtn = document.querySelector(".close-btn");
 
         closeBtn.onclick = () => modal.style.display = "none";
-        window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+        window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
+        window.addEventListener("keydown", (e) => { if (e.key === "Escape") modal.style.display = "none"; });
+
+        // Registro de Service Worker para guardar fotos y páginas en el celular
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((err) => console.log('SW:', err));
+            });
+        }
+
+        // Botón para instalar directo en Android si está disponible
+        let deferredPrompt;
+        const btnInstalar = document.getElementById('btn-instalar-app');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (btnInstalar) btnInstalar.style.display = 'inline-flex';
+        });
+        if (btnInstalar) {
+            btnInstalar.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                btnInstalar.style.display = 'none';
+            });
+        }
     </script>
 
     <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-      import { getFirestore, collection, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyAfle8tRTuz_33Su2H8fTwjUywRN5VKU7Q",
-        authDomain: "panaderia-belen.firebaseapp.com",
-        projectId: "panaderia-belen",
-        storageBucket: "panaderia-belen.firebasestorage.app",
-        messagingSenderId: "982156401466",
-        appId: "1:982156401466:web:4b8167ae3b676f8b3ece03"
-      };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfle8tRTuz_33Su2H8fTwjUywRN5VKU7Q",
+            authDomain: "panaderia-belen.firebaseapp.com",
+            projectId: "panaderia-belen",
+            storageBucket: "panaderia-belen.firebasestorage.app",
+            messagingSenderId: "982156401466",
+            appId: "1:982156401466:web:4b8167ae3b676f8b3ece03"
+        };
 
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-      // ACTIVAMOS LA CACHÉ
-      enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
+        enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
 
-      // FUNCIÓN PARA LEER CATEGORÍAS Y PRODUCTOS DINÁMICAMENTE (CON FILTRO DE PASTELERÍA)
-      async function cargarCategoriasYProductos() {
-          const pantallaCarga = document.getElementById('pantalla-carga');
-          const categoriasContainer = document.getElementById('categorias-container');
-          
-          // 💡 EL FILTRO: Lista de categorías que NO queremos que salgan en el inicio
-          const categoriasExcluidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES"];
+        let categoriaActiva = "TODAS";
+        const CACHE_KEY = "panaderia_belen_catalogo_v1";
+        const categoriasExcluidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES"];
 
-          try {
-              // 1. Descargamos TODOS los productos primero
-              const prodSnapshot = await getDocs(collection(db, "productos"));
-              let productos = [];
-              let categoriasUnicas = new Set();
+        function formatearPrecio(precio) {
+            if (!precio) return "";
+            const str = String(precio).trim();
+            return str.startsWith("$") ? str : `$${str}`;
+        }
 
-              prodSnapshot.forEach((docSnap) => {
-                  const data = docSnap.data();
-                  if (data.categoria) {
-                      const catUpper = data.categoria.trim().toUpperCase();
-                      
-                      // Solo lo guardamos si NO está en la lista de excluidas
-                      if (!categoriasExcluidas.includes(catUpper)) {
-                          productos.push(data);
-                          categoriasUnicas.add(catUpper);
-                      }
-                  }
-              });
+        function obtenerUrlOptimizada(url, ancho = 400) {
+            if (!url || typeof url !== 'string') return '';
+            if (url.startsWith('data:') || !url.startsWith('http')) return url;
+            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${ancho}&q=78&output=webp`;
+        }
 
-              // 2. También descargamos las categorías oficiales del admin
-              const catSnapshot = await getDocs(collection(db, "categorias"));
-              catSnapshot.forEach(doc => {
-                  const catUpper = doc.data().nombre.trim().toUpperCase();
-                  // Solo la agregamos si NO es de pastelería
-                  if (!categoriasExcluidas.includes(catUpper)) {
-                      categoriasUnicas.add(catUpper);
-                  }
-              });
-              
-              // Convertimos a lista y ordenamos alfabéticamente
-              let categorias = Array.from(categoriasUnicas).sort();
-              
-              // 3. Limpiamos y creamos los contenedores visuales
-              if(categoriasContainer) categoriasContainer.innerHTML = '';
-              categorias.forEach(catNombre => {
-                  const h2 = document.createElement('h2');
-                  h2.className = 'section-title';
-                  h2.textContent = catNombre;
-                  
-                  const divGrid = document.createElement('div');
-                  divGrid.className = 'product-grid';
-                  divGrid.id = 'grid-' + catNombre.replace(/\s+/g, '-'); 
-                  
-                  if(categoriasContainer) {
-                      categoriasContainer.appendChild(h2);
-                      categoriasContainer.appendChild(divGrid);
-                  }
-              });
+        function guardarFotosEnCelular(productos) {
+            if (!('serviceWorker' in navigator)) return;
+            const urls = productos
+                .map(p => obtenerUrlOptimizada(p.imagen, 400))
+                .filter(Boolean);
 
-              if (pantallaCarga) pantallaCarga.style.display = 'none';
-              
-              // 4. Repartimos los productos en sus respectivas cajas
-              productos.forEach((data) => {
-                  const idGrilla = 'grid-' + data.categoria.trim().toUpperCase().replace(/\s+/g, '-');
-                  const contenedorGrilla = document.getElementById(idGrilla);
+            navigator.serviceWorker.ready.then((reg) => {
+                if (reg.active) {
+                    reg.active.postMessage({ type: 'CACHE_IMAGES', urls });
+                    if (!sessionStorage.getItem('aviso_fotos_guardadas')) {
+                        sessionStorage.setItem('aviso_fotos_guardadas', '1');
+                        const toast = document.getElementById('offline-toast');
+                        if (toast) {
+                            toast.classList.add('show');
+                            setTimeout(() => toast.classList.remove('show'), 3200);
+                        }
+                    }
+                }
+            });
+        }
 
-                  if(contenedorGrilla) {
-                      const tarjeta = document.createElement('div');
-                      tarjeta.className = 'product-card';
-                      tarjeta.innerHTML = `
-                          <img src="${data.imagen}" alt="${data.nombre}" loading="lazy">
-                          <div class="info">
-                              <h3>${data.nombre}</h3>
-                              <p class="price">${data.precio}</p>
-                          </div>
-                      `;
+        function renderizarCatalogo(productos, categorias) {
+            const pantallaCarga = document.getElementById('pantalla-carga');
+            const categoriasContainer = document.getElementById('categorias-container');
+            const filtrosContainer = document.getElementById('filtros-categorias');
 
-                      tarjeta.addEventListener('click', () => {
-                          document.getElementById("modalImg").src = data.imagen;
-                          document.getElementById("modalName").innerText = data.nombre;
-                          document.getElementById("modalDesc").innerText = data.descripcion || '';
-                          document.getElementById("modalPrice").innerText = data.precio;
-                          document.getElementById("productModal").style.display = "flex";
-                      });
+            if (categoriasContainer) categoriasContainer.innerHTML = '';
 
-                      contenedorGrilla.prepend(tarjeta);
-                  }
-              });
+            categorias.forEach(catNombre => {
+                const h2 = document.createElement('h2');
+                h2.className = 'section-title';
+                h2.dataset.categoria = catNombre;
+                h2.textContent = catNombre;
 
-              // 5. Ocultar categorías vacías
-              document.querySelectorAll('.section-title').forEach(titulo => {
-                  const grilla = titulo.nextElementSibling;
-                  if (grilla && grilla.children.length === 0) {
-                      titulo.style.display = 'none';
-                      grilla.style.display = 'none';
-                  }
-              });
+                const divGrid = document.createElement('div');
+                divGrid.className = 'product-grid';
+                divGrid.id = 'grid-' + catNombre.replace(/\s+/g, '-');
 
-          } catch (error) {
-              console.error("Error al cargar los datos: ", error);
-              if (pantallaCarga) pantallaCarga.innerHTML = '<p style="color:red; font-weight:bold;">Hubo un error al cargar.</p>';
-          }
-      }
+                if (categoriasContainer) {
+                    categoriasContainer.appendChild(h2);
+                    categoriasContainer.appendChild(divGrid);
+                }
+            });
 
-      cargarCategoriasYProductos();
-      
-      // --- BUSCADOR EN TIEMPO REAL ---
-      const buscador = document.getElementById('buscador-productos');
-      if (buscador) {
-          buscador.addEventListener('input', (e) => {
-              const textoBuscado = e.target.value.toLowerCase().trim();
-              const todasLasTarjetas = document.querySelectorAll('.product-card');
+            if (pantallaCarga) pantallaCarga.style.display = 'none';
 
-              todasLasTarjetas.forEach(tarjeta => {
-                  const nombreProducto = tarjeta.querySelector('h3').innerText.toLowerCase();
-                  if (nombreProducto.includes(textoBuscado)) {
-                      tarjeta.style.display = '';
-                  } else {
-                      tarjeta.style.display = 'none';
-                  }
-              });
+            productos.forEach((data, index) => {
+                const catUpper = data.categoria.trim().toUpperCase();
+                const idGrilla = 'grid-' + catUpper.replace(/\s+/g, '-');
+                const contenedorGrilla = document.getElementById(idGrilla);
 
-              // Ocultar títulos Y grillas vacías para evitar espacios gigantes
-              document.querySelectorAll('.section-title').forEach(titulo => {
-                  const grilla = titulo.nextElementSibling;
-                  if (grilla && grilla.classList.contains('product-grid')) {
-                      const tarjetasVisibles = grilla.querySelectorAll('.product-card:not([style*="display: none"])');
-                      
-                      if (tarjetasVisibles.length === 0 && textoBuscado !== "") {
-                          titulo.style.display = 'none';
-                          grilla.style.display = 'none'; // <-- ¡ESTO QUITA EL ESPACIO VACÍO!
-                      } else {
-                          titulo.style.display = '';
-                          grilla.style.display = '';
-                      }
-                  }
-              });
-          });
-      }
+                if (contenedorGrilla) {
+                    const precioFormateado = formatearPrecio(data.precio);
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'product-card';
+
+                    const esPrioritaria = index < 6;
+                    const loadingAttr = esPrioritaria ? 'eager' : 'lazy';
+                    const priorityAttr = esPrioritaria ? 'fetchpriority="high"' : '';
+                    const thumbUrl = obtenerUrlOptimizada(data.imagen, 400);
+
+                    tarjeta.innerHTML = `
+                        <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
+                        <div class="info">
+                            <h3>${data.nombre}</h3>
+                            <p class="price">${precioFormateado}</p>
+                        </div>
+                    `;
+
+                    tarjeta.addEventListener('click', () => {
+                        const modalImgEl = document.getElementById("modalImg");
+                        modalImgEl.onerror = function() {
+                            if (this.src !== data.imagen) this.src = data.imagen;
+                        };
+                        modalImgEl.src = obtenerUrlOptimizada(data.imagen, 800);
+                        modalImgEl.alt = data.nombre;
+                        document.getElementById("modalName").innerText = data.nombre;
+                        document.getElementById("modalDesc").innerText = data.descripcion || '';
+                        document.getElementById("modalPrice").innerText = precioFormateado;
+                        document.getElementById("productModal").style.display = "flex";
+                    });
+
+                    contenedorGrilla.prepend(tarjeta);
+                }
+            });
+
+            if (filtrosContainer) {
+                filtrosContainer.innerHTML = '';
+                const categoriasConProductos = categorias.filter(catNombre => {
+                    const grilla = document.getElementById('grid-' + catNombre.replace(/\s+/g, '-'));
+                    return grilla && grilla.children.length > 0;
+                });
+
+                if (categoriasConProductos.length > 1) {
+                    const chipTodas = document.createElement('button');
+                    chipTodas.className = 'chip' + (categoriaActiva === 'TODAS' ? ' active' : '');
+                    chipTodas.textContent = 'Todas';
+                    chipTodas.onclick = () => seleccionarCategoria('TODAS', chipTodas);
+                    filtrosContainer.appendChild(chipTodas);
+
+                    categoriasConProductos.forEach(catNombre => {
+                        const chip = document.createElement('button');
+                        chip.className = 'chip' + (categoriaActiva === catNombre ? ' active' : '');
+                        chip.textContent = catNombre;
+                        chip.onclick = () => seleccionarCategoria(catNombre, chip);
+                        filtrosContainer.appendChild(chip);
+                    });
+                }
+            }
+
+            aplicarFiltros();
+        }
+
+        async function cargarCategoriasYProductos() {
+            const pantallaCarga = document.getElementById('pantalla-carga');
+
+            // 1. Carga instantánea desde memoria local
+            try {
+                const cacheGuardado = localStorage.getItem(CACHE_KEY);
+                if (cacheGuardado) {
+                    const { productos, categorias } = JSON.parse(cacheGuardado);
+                    renderizarCatalogo(productos, categorias);
+                }
+            } catch (e) {}
+
+            // 2. Descarga en paralelo desde Firebase
+            try {
+                const [prodSnapshot, catSnapshot] = await Promise.all([
+                    getDocs(collection(db, "productos")),
+                    getDocs(collection(db, "categorias"))
+                ]);
+
+                let productos = [];
+                let categoriasUnicas = new Set();
+
+                prodSnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    if (data.categoria) {
+                        const catUpper = data.categoria.trim().toUpperCase();
+                        if (!categoriasExcluidas.includes(catUpper)) {
+                            productos.push(data);
+                            categoriasUnicas.add(catUpper);
+                        }
+                    }
+                });
+
+                catSnapshot.forEach(doc => {
+                    if (doc.data().nombre) {
+                        const catUpper = doc.data().nombre.trim().toUpperCase();
+                        if (!categoriasExcluidas.includes(catUpper)) {
+                            categoriasUnicas.add(catUpper);
+                        }
+                    }
+                });
+
+                let categorias = Array.from(categoriasUnicas).sort();
+
+                renderizarCatalogo(productos, categorias);
+                guardarFotosEnCelular(productos);
+
+                try {
+                    localStorage.setItem(CACHE_KEY, JSON.stringify({ productos, categorias }));
+                } catch (e) {}
+
+            } catch (error) {
+                console.error("Error al cargar los datos: ", error);
+                if (pantallaCarga && pantallaCarga.style.display !== 'none') {
+                    pantallaCarga.innerHTML = '<p style="color:#d32f2f; font-weight:bold;">Hubo un error al cargar el catálogo. Revisa tu conexión.</p>';
+                }
+            }
+        }
+
+        function seleccionarCategoria(catNombre, botonChip) {
+            categoriaActiva = catNombre;
+            document.querySelectorAll('.category-chips .chip').forEach(c => c.classList.remove('active'));
+            if (botonChip) botonChip.classList.add('active');
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            const buscador = document.getElementById('buscador-productos');
+            const textoBuscado = buscador ? buscador.value.toLowerCase().trim() : "";
+            const sinResultados = document.getElementById('sin-resultados');
+            let totalVisibles = 0;
+
+            document.querySelectorAll('.section-title').forEach(titulo => {
+                const catTitulo = titulo.dataset.categoria;
+                const grilla = titulo.nextElementSibling;
+                if (!grilla || !grilla.classList.contains('product-grid')) return;
+
+                const coincideCategoria = (categoriaActiva === "TODAS" || categoriaActiva === catTitulo);
+                let visiblesEnGrilla = 0;
+
+                grilla.querySelectorAll('.product-card').forEach(tarjeta => {
+                    const nombreProducto = tarjeta.querySelector('h3').innerText.toLowerCase();
+                    if (coincideCategoria && nombreProducto.includes(textoBuscado)) {
+                        tarjeta.style.display = '';
+                        visiblesEnGrilla++;
+                        totalVisibles++;
+                    } else {
+                        tarjeta.style.display = 'none';
+                    }
+                });
+
+                if (visiblesEnGrilla > 0) {
+                    titulo.style.display = '';
+                    grilla.style.display = '';
+                } else {
+                    titulo.style.display = 'none';
+                    grilla.style.display = 'none';
+                }
+            });
+
+            if (sinResultados) {
+                sinResultados.style.display = (totalVisibles === 0) ? 'block' : 'none';
+            }
+        }
+
+        cargarCategoriasYProductos();
+
+        const buscador = document.getElementById('buscador-productos');
+        if (buscador) {
+            buscador.addEventListener('input', aplicarFiltros);
+        }
     </script>
 </body>
 </html>

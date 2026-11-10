@@ -2,54 +2,84 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Repostería - Panadería Belén</title>
-    <!-- Íconos universales -->
-    <link rel="icon" href="imagen/logo.jpg">
-    <link rel="apple-touch-icon" href="imagen/logo.jpg">
-    <link rel="icon" sizes="192x192" href="imagen/logo.jpg">
-    <link rel="icon" sizes="512x512" href="imagen/logo.jpg">
+    <link rel="preconnect" href="https://wsrv.nl" crossorigin>
+    <link rel="preconnect" href="https://i.ibb.co" crossorigin>
+    <link rel="dns-prefetch" href="https://i.ibb.co">
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+
+    <!-- Íconos para iPhone (iOS) y Android + PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="imagen/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="imagen/icon-512.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="imagen/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-title" content="Panadería Belén">
     <meta name="application-name" content="Panadería Belén">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#ef6c00">
-    
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem;">
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <img src="imagen/logo.jpg" alt="Logo Belén" style="height: 50px; border-radius: 50%;">
-            <div class="header-text" style="text-align: left;">
-                <h1 style="margin: 0; font-size: 1.5rem;">Repostería Exclusiva</h1>
-                <p style="margin: 0; font-size: 0.9rem;">Tortas y Kuchen</p>
+    <header>
+        <div class="header-brand">
+            <img src="imagen/apple-touch-icon.png" alt="Logo Belén" class="logo-header">
+            <div class="header-text">
+                <h1>Repostería Exclusiva</h1>
+                <p>Tortas, Kuchen, Empanadas y Dulces</p>
             </div>
         </div>
-        <a href="index.html" style="background: white; color: var(--primary); text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; border: 2px solid white; text-align: center;">Volver a Inicio</a>
+        <div class="header-actions">
+            <a href="index.html" class="btn-header">← Inicio</a>
+        </div>
     </header>
 
     <div class="container">
-        <div id="pantalla-carga" style="text-align: center; padding: 50px 20px; color: #ef6c00;">
-            <h2 style="font-size: 24px; margin-bottom: 10px;">🍰 Preparando vitrina...</h2>
-            <p style="color: #666; font-weight: bold;">Descargando tortas y kuchenes, por favor espera.</p>
+        <div class="sticky-controls">
+            <div class="search-wrapper">
+                <input type="search" id="buscador-reposteria" class="search-input" placeholder="Buscar tortas, kuchen, empanadas...">
+            </div>
+            <div id="filtros-categorias" class="category-chips"></div>
         </div>
-        <!-- SECCIONES DE REPOSTERÍA -->
-        <!-- SECCIONES DE REPOSTERÍA -->
-        <h2 class="section-title">TORTAS</h2>
-        <div class="product-grid" id="grid-tortas"></div>
-        <h2 class="section-title">KUCHEN</h2>
-        <div class="product-grid" id="grid-kuchen"></div>
-        <h2 class="section-title">EMPANADAS</h2>
-        <div class="product-grid" id="grid-empanadas"></div>
-        <h2 class="section-title">COSAS DULCES</h2>
-        <div class="product-grid" id="grid-cosas-dulces"></div>
-        <h2 class="section-title">FRUTERIA</h2>
-        <div class="product-grid" id="grid-fruteria"></div>
+
+        <div id="pantalla-carga" class="loading-box">
+            <h2>Preparando vitrina...</h2>
+            <p>Descargando tortas y kuchenes, por favor espera.</p>
+        </div>
+
+        <div id="sin-resultados" class="empty-search-box" style="display: none;">
+            <h3>No encontramos productos</h3>
+            <p>Intenta con otro nombre o revisa otra categoría.</p>
+        </div>
+
+        <div id="reposteria-container">
+            <h2 class="section-title" data-categoria="TORTAS">TORTAS</h2>
+            <div class="product-grid" id="grid-tortas"></div>
+
+            <h2 class="section-title" data-categoria="KUCHEN">KUCHEN</h2>
+            <div class="product-grid" id="grid-kuchen"></div>
+
+            <h2 class="section-title" data-categoria="EMPANADAS">EMPANADAS</h2>
+            <div class="product-grid" id="grid-empanadas"></div>
+
+            <h2 class="section-title" data-categoria="COSAS DULCES">COSAS DULCES</h2>
+            <div class="product-grid" id="grid-cosas-dulces"></div>
+
+            <h2 class="section-title" data-categoria="FRUTERIA">FRUTERIA</h2>
+            <div class="product-grid" id="grid-fruteria"></div>
+        </div>
     </div>
+
+    <div id="offline-toast" class="offline-toast">Catálogo guardado en tu celular para carga rápida</div>
 
     <!-- MODAL PARA VER DETALLE DEL PRODUCTO -->
     <div id="productModal" class="modal">
         <div class="modal-content">
-            <span class="close-btn">&times;</span>
+            <span class="close-btn" title="Cerrar">&times;</span>
             <img id="modalImg" src="" alt="">
             <div class="modal-details">
                 <h2 id="modalName"></h2>
@@ -63,83 +93,241 @@
         const modal = document.getElementById("productModal");
         const closeBtn = document.querySelector(".close-btn");
         closeBtn.onclick = () => modal.style.display = "none";
-        window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+        window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
+        window.addEventListener("keydown", (e) => { if (e.key === "Escape") modal.style.display = "none"; });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((err) => console.log('SW:', err));
+            });
+        }
     </script>
 
     <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-      import { getFirestore, collection, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyAfle8tRTuz_33Su2H8fTwjUywRN5VKU7Q",
-        authDomain: "panaderia-belen.firebaseapp.com",
-        projectId: "panaderia-belen",
-        storageBucket: "panaderia-belen.firebasestorage.app",
-        messagingSenderId: "982156401466",
-        appId: "1:982156401466:web:4b8167ae3b676f8b3ece03"
-      };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfle8tRTuz_33Su2H8fTwjUywRN5VKU7Q",
+            authDomain: "panaderia-belen.firebaseapp.com",
+            projectId: "panaderia-belen",
+            storageBucket: "panaderia-belen.firebasestorage.app",
+            messagingSenderId: "982156401466",
+            appId: "1:982156401466:web:4b8167ae3b676f8b3ece03"
+        };
 
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-      enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
+        enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
 
-      async function cargarReposteria() {
-          const pantallaCarga = document.getElementById('pantalla-carga');
-          try {
-              const querySnapshot = await getDocs(collection(db, "productos"));
-              
-              if (pantallaCarga) pantallaCarga.style.display = 'none';
+        let categoriaActiva = "TODAS";
+        const CACHE_KEY = "panaderia_belen_reposteria_v1";
+        const categoriasValidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES", "FRUTERIA"];
 
-              querySnapshot.forEach((docSnap) => {
-                  const data = docSnap.data();
-                  
-                  const categoriasValidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES", "FRUTERIA"];
-                  
-                  if(categoriasValidas.includes(data.categoria)) {
-                      let contenedorGrilla = null;
-                      
-                      if(data.categoria === "TORTAS") contenedorGrilla = document.getElementById('grid-tortas');
-                      if(data.categoria === "KUCHEN") contenedorGrilla = document.getElementById('grid-kuchen');
-                      if(data.categoria === "EMPANADAS") contenedorGrilla = document.getElementById('grid-empanadas');
-                      if(data.categoria === "COSAS DULCES") contenedorGrilla = document.getElementById('grid-cosas-dulces');
-                      if(data.categoria === "FRUTERIA") contenedorGrilla = document.getElementById('grid-fruteria');
+        const mapaGrillas = {
+            "TORTAS": "grid-tortas",
+            "KUCHEN": "grid-kuchen",
+            "EMPANADAS": "grid-empanadas",
+            "COSAS DULCES": "grid-cosas-dulces",
+            "FRUTERIA": "grid-fruteria"
+        };
 
-                      if(contenedorGrilla) {
-                          const tarjeta = document.createElement('div');
-                          tarjeta.className = 'product-card';
+        function formatearPrecio(precio) {
+            if (!precio) return "";
+            const str = String(precio).trim();
+            return str.startsWith("$") ? str : `$${str}`;
+        }
 
-                          let textoStock = `<p style="color: #2e7d32; font-size: 13px; font-weight: bold; margin: 5px 0;">✅ Stock: ${data.stock}</p>`;
-                          if (!data.stock || data.stock <= 0) {
-                              textoStock = `<p style="color: #d32f2f; font-size: 13px; font-weight: bold; margin: 5px 0;">❌ Agotado</p>`;
-                          }
+        function obtenerUrlOptimizada(url, ancho = 400) {
+            if (!url || typeof url !== 'string') return '';
+            if (url.startsWith('data:') || !url.startsWith('http')) return url;
+            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${ancho}&q=78&output=webp`;
+        }
 
-                          tarjeta.innerHTML = `
-                              <img src="${data.imagen}" alt="${data.nombre}" loading="lazy">
-                              <div class="info">
-                                  <h3>${data.nombre}</h3>
-                                  <p class="price">${data.precio}</p>
-                                  ${textoStock}
-                              </div>
-                          `;
+        function guardarFotosEnCelular(productos) {
+            if (!('serviceWorker' in navigator)) return;
+            const urls = productos
+                .map(p => obtenerUrlOptimizada(p.imagen, 400))
+                .filter(Boolean);
 
-                          tarjeta.addEventListener('click', () => {
-                              document.getElementById("modalImg").src = data.imagen;
-                              document.getElementById("modalName").innerText = data.nombre;
-                              document.getElementById("modalDesc").innerText = data.descripcion || '';
-                              document.getElementById("modalPrice").innerText = data.precio;
-                              document.getElementById("productModal").style.display = "flex";
-                          });
+            navigator.serviceWorker.ready.then((reg) => {
+                if (reg.active) {
+                    reg.active.postMessage({ type: 'CACHE_IMAGES', urls });
+                }
+            });
+        }
 
-                          contenedorGrilla.prepend(tarjeta);
-                      }
-                  }
-              });
-          } catch (error) {
-               console.error("Error al cargar repostería: ", error);
-          }
-      }
-      cargarReposteria();
+        function renderizarReposteria(productos) {
+            const pantallaCarga = document.getElementById('pantalla-carga');
+            const filtrosContainer = document.getElementById('filtros-categorias');
+
+            Object.values(mapaGrillas).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '';
+            });
+
+            if (pantallaCarga) pantallaCarga.style.display = 'none';
+
+            productos.forEach((data, index) => {
+                const catUpper = (data.categoria || '').trim().toUpperCase();
+                const idGrilla = mapaGrillas[catUpper];
+                const contenedorGrilla = idGrilla ? document.getElementById(idGrilla) : null;
+
+                if (contenedorGrilla) {
+                    const precioFormateado = formatearPrecio(data.precio);
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'product-card';
+
+                    let textoStock = `<p style="color: #2e7d32; font-size: 12px; font-weight: bold; margin: 6px 0 0;">Stock: ${data.stock}</p>`;
+                    if (!data.stock || Number(data.stock) <= 0) {
+                        textoStock = `<p style="color: #d32f2f; font-size: 12px; font-weight: bold; margin: 6px 0 0;">Agotado</p>`;
+                    }
+
+                    const esPrioritaria = index < 6;
+                    const loadingAttr = esPrioritaria ? 'eager' : 'lazy';
+                    const priorityAttr = esPrioritaria ? 'fetchpriority="high"' : '';
+                    const thumbUrl = obtenerUrlOptimizada(data.imagen, 400);
+
+                    tarjeta.innerHTML = `
+                        <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
+                        <div class="info">
+                            <h3>${data.nombre}</h3>
+                            <p class="price">${precioFormateado}</p>
+                            ${textoStock}
+                        </div>
+                    `;
+
+                    tarjeta.addEventListener('click', () => {
+                        const modalImgEl = document.getElementById("modalImg");
+                        modalImgEl.onerror = function() {
+                            if (this.src !== data.imagen) this.src = data.imagen;
+                        };
+                        modalImgEl.src = obtenerUrlOptimizada(data.imagen, 800);
+                        modalImgEl.alt = data.nombre;
+                        document.getElementById("modalName").innerText = data.nombre;
+                        document.getElementById("modalDesc").innerText = data.descripcion || '';
+                        document.getElementById("modalPrice").innerText = precioFormateado;
+                        document.getElementById("productModal").style.display = "flex";
+                    });
+
+                    contenedorGrilla.prepend(tarjeta);
+                }
+            });
+
+            if (filtrosContainer) {
+                filtrosContainer.innerHTML = '';
+                const categoriasConProductos = categoriasValidas.filter(catNombre => {
+                    const grilla = document.getElementById(mapaGrillas[catNombre]);
+                    return grilla && grilla.children.length > 0;
+                });
+
+                if (categoriasConProductos.length > 1) {
+                    const chipTodas = document.createElement('button');
+                    chipTodas.className = 'chip' + (categoriaActiva === 'TODAS' ? ' active' : '');
+                    chipTodas.textContent = 'Todas';
+                    chipTodas.onclick = () => seleccionarCategoria('TODAS', chipTodas);
+                    filtrosContainer.appendChild(chipTodas);
+
+                    categoriasConProductos.forEach(catNombre => {
+                        const chip = document.createElement('button');
+                        chip.className = 'chip' + (categoriaActiva === catNombre ? ' active' : '');
+                        chip.textContent = catNombre;
+                        chip.onclick = () => seleccionarCategoria(catNombre, chip);
+                        filtrosContainer.appendChild(chip);
+                    });
+                }
+            }
+
+            aplicarFiltros();
+        }
+
+        async function cargarReposteria() {
+            // 1. Renderizado instantáneo desde caché local
+            try {
+                const cacheGuardado = localStorage.getItem(CACHE_KEY);
+                if (cacheGuardado) {
+                    renderizarReposteria(JSON.parse(cacheGuardado));
+                }
+            } catch (e) {}
+
+            // 2. Actualización desde Firebase
+            try {
+                const querySnapshot = await getDocs(collection(db, "productos"));
+                let productosReposteria = [];
+
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const catUpper = (data.categoria || '').trim().toUpperCase();
+                    if (categoriasValidas.includes(catUpper)) {
+                        productosReposteria.push(data);
+                    }
+                });
+
+                renderizarReposteria(productosReposteria);
+                guardarFotosEnCelular(productosReposteria);
+
+                try {
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(productosReposteria));
+                } catch (e) {}
+
+            } catch (error) {
+                console.error("Error al cargar repostería: ", error);
+            }
+        }
+
+        function seleccionarCategoria(catNombre, botonChip) {
+            categoriaActiva = catNombre;
+            document.querySelectorAll('.category-chips .chip').forEach(c => c.classList.remove('active'));
+            if (botonChip) botonChip.classList.add('active');
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            const buscador = document.getElementById('buscador-reposteria');
+            const textoBuscado = buscador ? buscador.value.toLowerCase().trim() : "";
+            const sinResultados = document.getElementById('sin-resultados');
+            let totalVisibles = 0;
+
+            document.querySelectorAll('.section-title').forEach(titulo => {
+                const catTitulo = titulo.dataset.categoria;
+                const grilla = titulo.nextElementSibling;
+                if (!grilla || !grilla.classList.contains('product-grid')) return;
+
+                const coincideCategoria = (categoriaActiva === "TODAS" || categoriaActiva === catTitulo);
+                let visiblesEnGrilla = 0;
+
+                grilla.querySelectorAll('.product-card').forEach(tarjeta => {
+                    const nombreProducto = tarjeta.querySelector('h3').innerText.toLowerCase();
+                    if (coincideCategoria && nombreProducto.includes(textoBuscado)) {
+                        tarjeta.style.display = '';
+                        visiblesEnGrilla++;
+                        totalVisibles++;
+                    } else {
+                        tarjeta.style.display = 'none';
+                    }
+                });
+
+                if (visiblesEnGrilla > 0) {
+                    titulo.style.display = '';
+                    grilla.style.display = '';
+                } else {
+                    titulo.style.display = 'none';
+                    grilla.style.display = 'none';
+                }
+            });
+
+            if (sinResultados) {
+                sinResultados.style.display = (totalVisibles === 0) ? 'block' : 'none';
+            }
+        }
+
+        cargarReposteria();
+
+        const buscador = document.getElementById('buscador-reposteria');
+        if (buscador) {
+            buscador.addEventListener('input', aplicarFiltros);
+        }
     </script>
 </body>
 </html>
