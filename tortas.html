@@ -139,6 +139,15 @@
             return str.startsWith("$") ? str : `$${str}`;
         }
 
+        function normalizarTexto(texto) {
+            return (texto || "")
+                .toString()
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .trim();
+        }
+
         function obtenerUrlOptimizada(url, ancho = 400) {
             if (!url || typeof url !== 'string') return '';
             if (url.startsWith('data:') || !url.startsWith('http')) return url;
@@ -192,6 +201,7 @@
                     tarjeta.innerHTML = `
                         <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
                         <div class="info">
+                            <span class="card-cat-tag">${catUpper}</span>
                             <h3>${data.nombre}</h3>
                             <p class="price">${precioFormateado}</p>
                             ${textoStock}
@@ -285,21 +295,31 @@
 
         function aplicarFiltros() {
             const buscador = document.getElementById('buscador-reposteria');
-            const textoBuscado = buscador ? buscador.value.toLowerCase().trim() : "";
+            const textoBuscado = normalizarTexto(buscador ? buscador.value : "");
             const sinResultados = document.getElementById('sin-resultados');
+            const reposteriaContainer = document.getElementById('reposteria-container');
             let totalVisibles = 0;
+
+            if (reposteriaContainer) {
+                if (textoBuscado !== "") {
+                    reposteriaContainer.classList.add('modo-busqueda');
+                } else {
+                    reposteriaContainer.classList.remove('modo-busqueda');
+                }
+            }
 
             document.querySelectorAll('.section-title').forEach(titulo => {
                 const catTitulo = titulo.dataset.categoria;
                 const grilla = titulo.nextElementSibling;
                 if (!grilla || !grilla.classList.contains('product-grid')) return;
 
-                const coincideCategoria = (categoriaActiva === "TODAS" || categoriaActiva === catTitulo);
+                const coincideCategoria = (textoBuscado !== "") || (categoriaActiva === "TODAS" || categoriaActiva === catTitulo);
                 let visiblesEnGrilla = 0;
 
                 grilla.querySelectorAll('.product-card').forEach(tarjeta => {
-                    const nombreProducto = tarjeta.querySelector('h3').innerText.toLowerCase();
-                    if (coincideCategoria && nombreProducto.includes(textoBuscado)) {
+                    const nombreProducto = normalizarTexto(tarjeta.querySelector('h3').innerText);
+                    const catProducto = normalizarTexto(catTitulo);
+                    if (coincideCategoria && (nombreProducto.includes(textoBuscado) || catProducto.includes(textoBuscado))) {
                         tarjeta.style.display = '';
                         visiblesEnGrilla++;
                         totalVisibles++;
@@ -308,8 +328,11 @@
                     }
                 });
 
-                if (visiblesEnGrilla > 0) {
+                if (visiblesEnGrilla > 0 && textoBuscado === "") {
                     titulo.style.display = '';
+                    grilla.style.display = '';
+                } else if (visiblesEnGrilla > 0 && textoBuscado !== "") {
+                    titulo.style.display = 'none';
                     grilla.style.display = '';
                 } else {
                     titulo.style.display = 'none';

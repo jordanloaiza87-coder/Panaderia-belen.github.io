@@ -30,13 +30,20 @@
         .login-box button { width: 100%; padding: 13px; background: linear-gradient(135deg, #ff9800, #ef6c00); color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 10px; font-size: 16px; }
         .btn-logout { background: #2d2420; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 10px; font-weight: bold; font-size: 0.9rem; }
         .btn-logout:hover { background: #4e342e; }
-        .admin-card { padding: 22px; margin-bottom: 24px; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
+        .admin-card { padding: 14px 18px; margin-bottom: 14px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .admin-card summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 1.1rem; user-select: none; }
+        .admin-card summary::-webkit-details-marker { display: none; }
+        .admin-card summary .toggle-badge { font-size: 0.82rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; background: rgba(0,0,0,0.07); }
+        .admin-card[open] summary { margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+        .admin-card:not([open]) summary .toggle-badge::after { content: "Mostrar ▼"; }
+        .admin-card[open] summary .toggle-badge::after { content: "Minimizar ▲"; }
         .admin-input { padding: 12px 14px; flex: 1; min-width: 180px; border: 1.5px solid #d7ccc8; border-radius: 10px; font-size: 16px; outline: none; background: white; }
         .admin-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239, 108, 0, 0.15); }
         .img-preview-box { display: none; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 14px; background: #fff3e0; border-radius: 10px; border: 1.5px solid #ffcc80; }
         .img-preview-box img { width: 62px; height: 62px; object-fit: cover; border-radius: 8px; }
         @media (max-width: 600px) {
-            .admin-card { padding: 16px; }
+            .admin-card { padding: 12px 14px; margin-bottom: 10px; }
+            .admin-card summary { font-size: 1rem; }
             .admin-input { min-width: 100%; }
         }
     </style>
@@ -66,11 +73,15 @@
         </div>
 
         <div id="panel-admin">
-            <div class="admin-card" style="background: #fff8e1; border: 2px solid #ffb74d;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-                    <h2 style="color: #e65100; margin: 0; font-size: 1.3rem;">Nuevo Producto de Pastelería</h2>
-                    <a href="admin.html" style="background: linear-gradient(135deg, #ff9800, #e65100); color: white; text-decoration: none; padding: 9px 16px; border-radius: 10px; font-weight: bold; box-shadow: 0 3px 8px rgba(230,81,0,0.25);">Ir a Panadería →</a>
-                </div>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                <a href="admin.html" style="background: linear-gradient(135deg, #ff9800, #e65100); color: white; text-decoration: none; padding: 9px 16px; border-radius: 10px; font-weight: bold; font-size: 0.92rem; box-shadow: 0 3px 8px rgba(230,81,0,0.25);">Ir a Admin Panadería →</a>
+            </div>
+
+            <details id="seccion-form-producto" class="admin-card" style="background: #fff8e1; border: 2px solid #ffb74d;">
+                <summary style="color: #e65100;">
+                    <span>Agregar / Editar Producto de Pastelería</span>
+                    <span class="toggle-badge" style="color: #e65100;"></span>
+                </summary>
 
                 <form id="form-producto" style="display: flex; flex-wrap: wrap; gap: 12px;">
                     <input type="text" id="prod-nombre" class="admin-input" placeholder="Nombre (ej: Torta Tres Leches)" required>
@@ -110,6 +121,17 @@
                         <button type="button" id="btn-cancelar-edicion" style="display: none; flex: 1; background: #757575; color: white; border: none; padding: 13px 20px; cursor: pointer; font-weight: bold; border-radius: 10px; font-size: 16px;">Cancelar Edición</button>
                     </div>
                 </form>
+            </details>
+
+            <div class="sticky-controls">
+                <div class="search-wrapper" style="margin-bottom: 4px;">
+                    <input type="search" id="buscador-admin-tortas" class="search-input" placeholder="Buscar torta, kuchen o empanada para editar...">
+                </div>
+            </div>
+
+            <div id="sin-resultados-admin" class="empty-search-box" style="display: none;">
+                <h3>No se encontró ese producto</h3>
+                <p>Intenta con otro nombre.</p>
             </div>
 
             <div id="categorias-container">
@@ -396,6 +418,7 @@
                         tarjeta.innerHTML = `
                             <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="lazy" decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
                             <div class="info">
+                                <span class="card-cat-tag">${data.categoria}</span>
                                 <h3>${data.nombre}</h3>
                                 <p class="price">${precioMostrado}</p>
                                 <p style="color: #2e7d32; font-weight: bold; margin: 5px 0; font-size: 13px;">Stock: ${data.stock || 'Sin definir'}</p>
@@ -441,13 +464,86 @@
                             btnGuardarForm.innerText = "Actualizar Producto";
                             btnGuardarForm.style.background = "#2196F3";
                             btnCancelarEdicion.style.display = 'block';
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            const seccionForm = document.getElementById('seccion-form-producto');
+                            if (seccionForm) {
+                                seccionForm.open = true;
+                                seccionForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            } else {
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
                         });
 
                         contenedorGrilla.prepend(tarjeta);
                     }
                 }
             });
+
+            filtrarPasteleriaAdmin();
+        }
+
+        function normalizarTexto(texto) {
+            return (texto || "")
+                .toString()
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .trim();
+        }
+
+        function filtrarPasteleriaAdmin() {
+            const buscador = document.getElementById('buscador-admin-tortas');
+            const textoBuscado = normalizarTexto(buscador ? buscador.value : "");
+            const sinResultados = document.getElementById('sin-resultados-admin');
+            const categoriasContainer = document.getElementById('categorias-container');
+            let totalVisibles = 0;
+
+            if (categoriasContainer) {
+                if (textoBuscado !== "") {
+                    categoriasContainer.classList.add('modo-busqueda');
+                } else {
+                    categoriasContainer.classList.remove('modo-busqueda');
+                }
+            }
+
+            document.querySelectorAll('.section-title').forEach(titulo => {
+                const catTitulo = titulo.innerText.trim();
+                const grilla = titulo.nextElementSibling;
+                if (!grilla || !grilla.classList.contains('product-grid')) return;
+
+                let visiblesEnGrilla = 0;
+                const catNormalizada = normalizarTexto(catTitulo);
+
+                grilla.querySelectorAll('.product-card').forEach(tarjeta => {
+                    const nombreProducto = normalizarTexto(tarjeta.querySelector('h3').innerText);
+                    if (textoBuscado === "" || nombreProducto.includes(textoBuscado) || catNormalizada.includes(textoBuscado)) {
+                        tarjeta.style.display = '';
+                        visiblesEnGrilla++;
+                        totalVisibles++;
+                    } else {
+                        tarjeta.style.display = 'none';
+                    }
+                });
+
+                if (textoBuscado === "") {
+                    titulo.style.display = '';
+                    grilla.style.display = '';
+                } else if (visiblesEnGrilla > 0) {
+                    titulo.style.display = 'none';
+                    grilla.style.display = '';
+                } else {
+                    titulo.style.display = 'none';
+                    grilla.style.display = 'none';
+                }
+            });
+
+            if (sinResultados) {
+                sinResultados.style.display = (textoBuscado !== "" && totalVisibles === 0) ? 'block' : 'none';
+            }
+        }
+
+        const buscadorAdminTortas = document.getElementById('buscador-admin-tortas');
+        if (buscadorAdminTortas) {
+            buscadorAdminTortas.addEventListener('input', filtrarPasteleriaAdmin);
         }
     </script>
 </body>

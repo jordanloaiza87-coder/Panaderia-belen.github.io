@@ -23,6 +23,7 @@
     <meta name="theme-color" content="#ef6c00">
 
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 </head>
 <body>
     <header>
@@ -47,7 +48,8 @@
 
         <div class="sticky-controls">
             <div class="search-wrapper">
-                <input type="search" id="buscador-productos" class="search-input" placeholder="Buscar pan, bebidas, lácteos, dulces...">
+                <input type="search" id="buscador-productos" class="search-input" placeholder="Buscar pan, bebidas, lácteos o código...">
+                <button type="button" id="btn-escanear-catalogo" class="btn-scan-search">Escanear</button>
             </div>
             <div id="filtros-categorias" class="category-chips"></div>
         </div>
@@ -76,6 +78,15 @@
                 <p id="modalDesc"></p>
                 <div id="modalPrice" class="modal-price"></div>
             </div>
+        </div>
+    </div>
+
+    <div id="scannerModalCliente" class="modal">
+        <div class="scanner-box">
+            <span id="closeScannerClienteBtn" class="close-btn" title="Cerrar">&times;</span>
+            <h3 style="margin: 0 0 12px 0; color: var(--primary);">Escanear Producto</h3>
+            <div id="qr-reader-cliente" class="scanner-viewport"></div>
+            <p id="scannerClienteMsg" style="font-size: 0.9rem; color: var(--text-muted); margin: 0;">Apunta la cámara al código de barra o QR para ver su precio</p>
         </div>
     </div>
 
@@ -141,6 +152,15 @@
             return str.startsWith("$") ? str : `$${str}`;
         }
 
+        function normalizarTexto(texto) {
+            return (texto || "")
+                .toString()
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .trim();
+        }
+
         function obtenerUrlOptimizada(url, ancho = 400) {
             if (!url || typeof url !== 'string') return '';
             if (url.startsWith('data:') || !url.startsWith('http')) return url;
@@ -200,8 +220,10 @@
 
                 if (contenedorGrilla) {
                     const precioFormateado = formatearPrecio(data.precio);
+                    const codigosArr = Array.isArray(data.codigos) ? data.codigos : (data.codigo ? [data.codigo] : []);
                     const tarjeta = document.createElement('div');
                     tarjeta.className = 'product-card';
+                    tarjeta.dataset.codigos = codigosArr.join(' ');
 
                     const esPrioritaria = index < 6;
                     const loadingAttr = esPrioritaria ? 'eager' : 'lazy';
@@ -211,6 +233,7 @@
                     tarjeta.innerHTML = `
                         <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
                         <div class="info">
+                            <span class="card-cat-tag">${catUpper}</span>
                             <h3>${data.nombre}</h3>
                             <p class="price">${precioFormateado}</p>
                         </div>
@@ -328,21 +351,36 @@
 
         function aplicarFiltros() {
             const buscador = document.getElementById('buscador-productos');
-            const textoBuscado = buscador ? buscador.value.toLowerCase().trim() : "";
+            const textoBuscado = normalizarTexto(buscador ? buscador.value : "");
             const sinResultados = document.getElementById('sin-resultados');
+            const categoriasContainer = document.getElementById('categorias-container');
             let totalVisibles = 0;
+
+            if (categoriasContainer) {
+                if (textoBuscado !== "") {
+                    categoriasContainer.classList.add('modo-busqueda');
+                } else {
+                    categoriasContainer.classList.remove('modo-busqueda');
+                }
+            }
 
             document.querySelectorAll('.section-title').forEach(titulo => {
                 const catTitulo = titulo.dataset.categoria;
                 const grilla = titulo.nextElementSibling;
                 if (!grilla || !grilla.classList.contains('product-grid')) return;
 
-                const coincideCategoria = (categoriaActiva === "TODAS" || categoriaActiva === catTitulo);
+                // Si está escribiendo en el buscador, busca en todas las categorías a la vez
+                const coincideCategoria = (textoBuscado !== "") || (categoriaActiva === "TODAS" || categoriaActiva === catTitulo);
                 let visiblesEnGrilla = 0;
 
                 grilla.querySelectorAll('.product-card').forEach(tarjeta => {
-                    const nombreProducto = tarjeta.querySelector('h3').innerText.toLowerCase();
-                    if (coincideCategoria && nombreProducto.includes(textoBuscado)) {
+                    const nombreProducto = normalizarTexto(tarjeta.querySelector('h3').innerText);
+                    const catProducto = normalizarTexto(catTitulo);
+                    const codigosProducto = normalizarTexto(tarjeta.dataset.codigos || "");
+                    if (
+                        coincideCategoria &&
+                        (nombreProducto.includes(textoBuscado) || catProducto.includes(textoBuscado) || codigosProducto.includes(textoBuscado))
+                    ) {
                         tarjeta.style.display = '';
                         visiblesEnGrilla++;
                         totalVisibles++;
@@ -351,8 +389,11 @@
                     }
                 });
 
-                if (visiblesEnGrilla > 0) {
+                if (visiblesEnGrilla > 0 && textoBuscado === "") {
                     titulo.style.display = '';
+                    grilla.style.display = '';
+                } else if (visiblesEnGrilla > 0 && textoBuscado !== "") {
+                    titulo.style.display = 'none';
                     grilla.style.display = '';
                 } else {
                     titulo.style.display = 'none';
@@ -370,6 +411,80 @@
         const buscador = document.getElementById('buscador-productos');
         if (buscador) {
             buscador.addEventListener('input', aplicarFiltros);
+        }
+
+        // --- ESCÁNER DE CÓDIGO EN EL CATÁLOGO ---
+        let scannerCliente = null;
+        const scannerModalCliente = document.getElementById('scannerModalCliente');
+        const btnEscanearCatalogo = document.getElementById('btn-escanear-catalogo');
+        const closeScannerClienteBtn = document.getElementById('closeScannerClienteBtn');
+        const scannerClienteMsg = document.getElementById('scannerClienteMsg');
+
+        function beepCliente() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1100, ctx.currentTime);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.12);
+            } catch (e) {}
+            if (navigator.vibrate) navigator.vibrate(100);
+        }
+
+        async function cerrarScannerCliente() {
+            if (scannerCliente) {
+                try {
+                    if (scannerCliente.isScanning) await scannerCliente.stop();
+                    scannerCliente.clear();
+                } catch (e) {}
+                scannerCliente = null;
+            }
+            if (scannerModalCliente) scannerModalCliente.style.display = 'none';
+        }
+
+        if (btnEscanearCatalogo) {
+            btnEscanearCatalogo.addEventListener('click', async () => {
+                if (!window.Html5Qrcode) return;
+                scannerModalCliente.style.display = 'flex';
+                scannerClienteMsg.textContent = 'Apunta la cámara al código de barra o QR para ver su precio';
+                await cerrarScannerCliente();
+                scannerModalCliente.style.display = 'flex';
+
+                scannerCliente = new Html5Qrcode("qr-reader-cliente");
+                try {
+                    await scannerCliente.start(
+                        { facingMode: "environment" },
+                        { fps: 12, qrbox: { width: 250, height: 150 } },
+                        async (codigoLeido) => {
+                            const codigo = String(codigoLeido).trim();
+                            if (!codigo) return;
+                            beepCliente();
+                            await cerrarScannerCliente();
+                            if (buscador) {
+                                buscador.value = codigo;
+                                aplicarFiltros();
+                                // Si encontró exactamente un producto visible, abre su modal con el precio en grande automáticamente
+                                const visibles = document.querySelectorAll('.product-card:not([style*="display: none"])');
+                                if (visibles.length === 1) {
+                                    visibles[0].click();
+                                }
+                            }
+                        },
+                        () => {}
+                    );
+                } catch (err) {
+                    scannerClienteMsg.textContent = 'No se pudo abrir la cámara. Verifica los permisos del navegador.';
+                }
+            });
+        }
+
+        if (closeScannerClienteBtn) {
+            closeScannerClienteBtn.addEventListener('click', cerrarScannerCliente);
         }
     </script>
 </body>

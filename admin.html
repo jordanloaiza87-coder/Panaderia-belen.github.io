@@ -22,6 +22,7 @@
     <meta name="theme-color" content="#ef6c00">
 
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
     <style>
         #panel-admin { display: none; }
         .login-box { max-width: 380px; margin: 40px auto; padding: 30px 24px; background: white; border-radius: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); text-align: center; border: 1px solid #f2e9df; }
@@ -31,13 +32,20 @@
         .login-box button:hover { opacity: 0.95; }
         .btn-logout { background: #2d2420; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 10px; font-weight: bold; font-size: 0.9rem; }
         .btn-logout:hover { background: #4e342e; }
-        .admin-card { padding: 22px; margin-bottom: 24px; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
+        .admin-card { padding: 14px 18px; margin-bottom: 14px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .admin-card summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 1.1rem; user-select: none; }
+        .admin-card summary::-webkit-details-marker { display: none; }
+        .admin-card summary .toggle-badge { font-size: 0.82rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; background: rgba(0,0,0,0.07); }
+        .admin-card[open] summary { margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+        .admin-card:not([open]) summary .toggle-badge::after { content: "Mostrar ▼"; }
+        .admin-card[open] summary .toggle-badge::after { content: "Minimizar ▲"; }
         .admin-input { padding: 12px 14px; flex: 1; min-width: 180px; border: 1.5px solid #d7ccc8; border-radius: 10px; font-size: 16px; outline: none; background: white; }
         .admin-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239, 108, 0, 0.15); }
         .img-preview-box { display: none; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 14px; background: white; border-radius: 10px; border: 1.5px solid #ffcc80; }
         .img-preview-box img { width: 62px; height: 62px; object-fit: cover; border-radius: 8px; }
         @media (max-width: 600px) {
-            .admin-card { padding: 16px; }
+            .admin-card { padding: 12px 14px; margin-bottom: 10px; }
+            .admin-card summary { font-size: 1rem; }
             .admin-input { min-width: 100%; }
         }
     </style>
@@ -67,12 +75,16 @@
         </div>
 
         <div id="panel-admin">
-            <!-- FORMULARIO DE PRODUCTOS -->
-            <div class="admin-card" style="background: #fff8e1; border: 2px solid #ffb74d;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-                    <h2 style="color: #e65100; margin: 0; font-size: 1.3rem;">Agregar / Editar Producto</h2>
-                    <a href="admin_tortas.html" style="background: linear-gradient(135deg, #ff9800, #e65100); color: white; text-decoration: none; padding: 9px 16px; border-radius: 10px; font-weight: bold; box-shadow: 0 3px 8px rgba(230,81,0,0.25);">Ir a Pastelería →</a>
-                </div>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                <a href="admin_tortas.html" style="background: linear-gradient(135deg, #ff9800, #e65100); color: white; text-decoration: none; padding: 9px 16px; border-radius: 10px; font-weight: bold; font-size: 0.92rem; box-shadow: 0 3px 8px rgba(230,81,0,0.25);">Ir a Admin Pastelería →</a>
+            </div>
+
+            <!-- FORMULARIO DE PRODUCTOS (MINIMIZABLE) -->
+            <details id="seccion-form-producto" class="admin-card" style="background: #fff8e1; border: 2px solid #ffb74d;">
+                <summary style="color: #e65100;">
+                    <span id="titulo-seccion-prod">Agregar / Editar Producto</span>
+                    <span class="toggle-badge" style="color: #e65100;"></span>
+                </summary>
 
                 <form id="form-producto" style="display: flex; flex-wrap: wrap; gap: 12px;">
                     <input type="text" id="prod-nombre" class="admin-input" placeholder="Nombre del producto (ej: Hallulla)" required>
@@ -106,11 +118,14 @@
                         <button type="button" id="btn-cancelar-edicion" style="display: none; flex: 1; background: #757575; color: white; border: none; padding: 13px 20px; cursor: pointer; font-weight: bold; border-radius: 10px; font-size: 16px;">Cancelar Edición</button>
                     </div>
                 </form>
-            </div>
+            </details>
 
-            <!-- GESTOR DE CATEGORÍAS -->
-            <div class="admin-card" style="background: #e8f5e9; border: 2px solid #81c784;">
-                <h2 style="color: #2e7d32; margin: 0 0 14px 0; font-size: 1.25rem;">Gestor de Categorías</h2>
+            <!-- GESTOR DE CATEGORÍAS (MINIMIZABLE) -->
+            <details id="seccion-categorias" class="admin-card" style="background: #e8f5e9; border: 2px solid #81c784;">
+                <summary style="color: #2e7d32;">
+                    <span>Gestor de Categorías</span>
+                    <span class="toggle-badge" style="color: #2e7d32;"></span>
+                </summary>
 
                 <form id="form-categoria" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;">
                     <input type="hidden" id="cat-id-oculto" value="">
@@ -126,18 +141,93 @@
                         <p style="color: #666; font-style: italic; margin: 0;">Cargando categorías...</p>
                     </div>
                 </div>
-            </div>
+            </details>
 
-            <!-- HISTORIAL DE CAMBIOS -->
-            <div class="admin-card" style="background: #e3f2fd; border: 2px solid #64b5f6;">
-                <h2 style="color: #1565c0; margin: 0 0 10px 0; font-size: 1.2rem;">Historial de Cambios</h2>
+            <!-- ASIGNAR CÓDIGO QR / BARRA RÁPIDO (MINIMIZABLE) -->
+            <details id="seccion-asignar-qr" class="admin-card" style="background: #f3e5f5; border: 2px solid #ab47bc;">
+                <summary style="color: #6a1b9a;">
+                    <span>Asignar Código QR / Barra (<span id="contador-pendientes-qr">0</span> pendientes)</span>
+                    <span class="toggle-badge" style="color: #6a1b9a;"></span>
+                </summary>
+
+                <p style="margin: 0 0 12px 0; font-size: 14px; color: #4a148c;">
+                    Toca cualquier producto para abrir la cámara automáticamente y escanear su código de barra o QR. Cuando termines con un producto, desaparecerá de los pendientes.
+                </p>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                    <button type="button" id="tab-qr-pendientes" style="flex: 1; padding: 9px 14px; border-radius: 8px; border: 2px solid #6a1b9a; background: #6a1b9a; color: white; font-weight: bold; cursor: pointer;">Pendientes sin código</button>
+                    <button type="button" id="tab-qr-completados" style="flex: 1; padding: 9px 14px; border-radius: 8px; border: 2px solid #6a1b9a; background: white; color: #6a1b9a; font-weight: bold; cursor: pointer;">Ya con código (Agregar variantes)</button>
+                </div>
+
+                <input type="search" id="filtro-asignar-qr" class="admin-input" placeholder="Filtrar producto por nombre..." style="width: 100%; margin-bottom: 12px;">
+
+                <div id="lista-asignar-qr" class="assign-grid">
+                    <p style="color: #666; margin: 0;">Cargando productos...</p>
+                </div>
+            </details>
+
+            <!-- HISTORIAL DE CAMBIOS (MINIMIZABLE) -->
+            <details class="admin-card" style="background: #e3f2fd; border: 2px solid #64b5f6;">
+                <summary style="color: #1565c0;">
+                    <span>Historial de Cambios</span>
+                    <span class="toggle-badge" style="color: #1565c0;"></span>
+                </summary>
                 <div id="lista-historial" style="max-height: 180px; overflow-y: auto; background: white; padding: 14px; border-radius: 10px; border: 1px solid #bbdefb; font-family: monospace; font-size: 13px;">
                     Cargando historial...
                 </div>
+            </details>
+
+            <!-- BUSCADOR RÁPIDO EN ADMIN -->
+            <div class="sticky-controls">
+                <div class="search-wrapper" style="margin-bottom: 4px;">
+                    <input type="search" id="buscador-admin" class="search-input" placeholder="Buscar por nombre o código para editar precio...">
+                    <button type="button" id="btn-escanear-admin" class="btn-scan-search">Escanear</button>
+                </div>
+            </div>
+
+            <div id="sin-resultados-admin" class="empty-search-box" style="display: none;">
+                <h3>No se encontró ese producto</h3>
+                <p>Intenta con otro nombre o revisa otra categoría.</p>
             </div>
 
             <!-- CONTENEDOR DE PRODUCTOS -->
             <div id="categorias-container"></div>
+        </div>
+    </div>
+
+    <!-- MODAL CÁMARA ESCÁNER PARA ASIGNAR O BUSCAR CÓDIGOS -->
+    <div id="scannerModal" class="modal">
+        <div class="scanner-box">
+            <span id="closeScannerBtn" class="close-btn" title="Cerrar">&times;</span>
+            <h3 id="scannerTitle" style="margin: 0 0 12px 0; color: var(--primary);">Escanear Código</h3>
+
+            <div id="scannerProductHeader" class="scanner-product-header" style="display: none;">
+                <img id="scannerProdImg" src="" alt="">
+                <div style="flex: 1;">
+                    <div id="scannerProdName" style="font-weight: 800; color: var(--primary); font-size: 1rem;"></div>
+                    <div id="scannerProdPrice" style="font-weight: 800; color: var(--accent); font-size: 0.95rem;"></div>
+                </div>
+            </div>
+
+            <div id="qr-reader" class="scanner-viewport"></div>
+
+            <div id="scannerStatusMsg" style="font-size: 0.92rem; font-weight: 700; color: #2e7d32; margin: 8px 0; min-height: 20px;">
+                Apunta la cámara al código de barra o QR
+            </div>
+
+            <div id="scannerCodesSection" style="display: none;">
+                <div style="font-size: 0.8rem; color: #555; font-weight: 600;">Códigos guardados para este producto (todas sus variantes):</div>
+                <div id="scannedCodesList" class="scanned-codes-list"></div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                    <button type="button" id="btn-otro-qr" style="display: none; width: 100%; padding: 12px; border-radius: 10px; border: none; background: #6a1b9a; color: white; font-weight: bold; font-size: 15px; cursor: pointer;">
+                        + Agregar otro código del mismo producto (otro sabor/variante)
+                    </button>
+                    <button type="button" id="btn-listo-qr" style="width: 100%; padding: 12px; border-radius: 10px; border: none; background: #2e7d32; color: white; font-weight: bold; font-size: 15px; cursor: pointer;">
+                        Listo con este producto
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -581,12 +671,23 @@
         });
 
         // --- CARGAR Y RENDERIZAR PRODUCTOS ---
+        let todosLosProductosAdmin = [];
+        let mostrarConCodigoEnAsignador = false;
+        let productoAsignandoActual = null;
+        let html5QrScanner = null;
+        let modoEscaneoActual = "ASIGNAR"; // "ASIGNAR" o "BUSCAR"
+
         async function cargarProductosAdmin() {
             document.querySelectorAll('.product-grid').forEach(g => g.innerHTML = '');
             const querySnapshot = await getDocs(collection(db, "productos"));
+            todosLosProductosAdmin = [];
 
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data();
+                const codigosArr = Array.isArray(data.codigos) ? data.codigos : (data.codigo ? [data.codigo] : []);
+                const prodObj = { id: docSnap.id, ...data, codigos: codigosArr };
+                todosLosProductosAdmin.push(prodObj);
+
                 if (!data.categoria) return;
 
                 const titulos = document.querySelectorAll('.section-title');
@@ -601,13 +702,18 @@
                 if (contenedorGrilla) {
                     const thumbUrl = obtenerUrlOptimizada(data.imagen, 400);
                     const precioMostrado = asegurarSimboloPrecio(data.precio);
+                    const catUpper = data.categoria.trim().toUpperCase();
                     const tarjeta = document.createElement('div');
                     tarjeta.className = 'product-card';
+                    tarjeta.dataset.categoria = catUpper;
+                    tarjeta.dataset.codigos = codigosArr.join(' ');
                     tarjeta.innerHTML = `
                         <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="lazy" decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
                         <div class="info">
+                            <span class="card-cat-tag">${catUpper}</span>
                             <h3>${data.nombre}</h3>
                             <p class="price">${precioMostrado}</p>
+                            ${codigosArr.length > 0 ? `<div style="font-size:11px; color:#6a1b9a; font-weight:bold; margin-top:4px;">${codigosArr.length} código(s)</div>` : ''}
                             <div style="display: flex; gap: 6px; margin-top: 10px; width: 100%;">
                                 <button class="btn-editar" style="background: #2196F3; color: white; border: none; padding: 7px; border-radius: 8px; cursor: pointer; flex: 1; font-weight: bold;">Editar</button>
                                 <button class="btn-eliminar" style="background: #f44336; color: white; border: none; padding: 7px; border-radius: 8px; cursor: pointer; flex: 1; font-weight: bold;">Borrar</button>
@@ -654,11 +760,352 @@
                         btnGuardarForm.innerText = "Actualizar Producto";
                         btnGuardarForm.style.background = "#2196F3";
                         btnCancelarEdicion.style.display = 'block';
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        const seccionForm = document.getElementById('seccion-form-producto');
+                        if (seccionForm) {
+                            seccionForm.open = true;
+                            seccionForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
                     });
 
                     contenedorGrilla.prepend(tarjeta);
                 }
+            });
+
+            renderizarAsignadorQR();
+            filtrarProductosAdmin();
+        }
+
+        function normalizarTexto(texto) {
+            return (texto || "")
+                .toString()
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .trim();
+        }
+
+        function filtrarProductosAdmin() {
+            const buscador = document.getElementById('buscador-admin');
+            const textoBuscado = normalizarTexto(buscador ? buscador.value : "");
+            const sinResultados = document.getElementById('sin-resultados-admin');
+            let totalVisibles = 0;
+
+            if (categoriasContainer) {
+                if (textoBuscado !== "") {
+                    categoriasContainer.classList.add('modo-busqueda');
+                } else {
+                    categoriasContainer.classList.remove('modo-busqueda');
+                }
+            }
+
+            document.querySelectorAll('.section-title').forEach(titulo => {
+                const catTitulo = titulo.innerText.trim();
+                const grilla = titulo.nextElementSibling;
+                if (!grilla || !grilla.classList.contains('product-grid')) return;
+
+                let visiblesEnGrilla = 0;
+                const catNormalizada = normalizarTexto(catTitulo);
+
+                grilla.querySelectorAll('.product-card').forEach(tarjeta => {
+                    const nombreProducto = normalizarTexto(tarjeta.querySelector('h3').innerText);
+                    const codigosTarjeta = normalizarTexto(tarjeta.dataset.codigos || "");
+                    if (
+                        textoBuscado === "" ||
+                        nombreProducto.includes(textoBuscado) ||
+                        catNormalizada.includes(textoBuscado) ||
+                        codigosTarjeta.includes(textoBuscado)
+                    ) {
+                        tarjeta.style.display = '';
+                        visiblesEnGrilla++;
+                        totalVisibles++;
+                    } else {
+                        tarjeta.style.display = 'none';
+                    }
+                });
+
+                if (textoBuscado === "") {
+                    titulo.style.display = '';
+                    grilla.style.display = '';
+                } else if (visiblesEnGrilla > 0) {
+                    titulo.style.display = 'none';
+                    grilla.style.display = '';
+                } else {
+                    titulo.style.display = 'none';
+                    grilla.style.display = 'none';
+                }
+            });
+
+            if (sinResultados) {
+                sinResultados.style.display = (textoBuscado !== "" && totalVisibles === 0) ? 'block' : 'none';
+            }
+        }
+
+        const buscadorAdmin = document.getElementById('buscador-admin');
+        if (buscadorAdmin) {
+            buscadorAdmin.addEventListener('input', filtrarProductosAdmin);
+        }
+
+        // ==========================================
+        // SECCIÓN ASIGNAR CÓDIGO QR / BARRA RÁPIDO
+        // ==========================================
+        const listaAsignarQR = document.getElementById('lista-asignar-qr');
+        const filtroAsignarQR = document.getElementById('filtro-asignar-qr');
+        const contadorPendientesQR = document.getElementById('contador-pendientes-qr');
+        const tabPendientes = document.getElementById('tab-qr-pendientes');
+        const tabCompletados = document.getElementById('tab-qr-completados');
+
+        function renderizarAsignadorQR() {
+            if (!listaAsignarQR) return;
+
+            const textoFiltro = normalizarTexto(filtroAsignarQR ? filtroAsignarQR.value : "");
+            const pendientes = todosLosProductosAdmin.filter(p => !p.codigos || p.codigos.length === 0);
+            if (contadorPendientesQR) contadorPendientesQR.textContent = pendientes.length;
+
+            const listaBase = mostrarConCodigoEnAsignador
+                ? todosLosProductosAdmin.filter(p => p.codigos && p.codigos.length > 0)
+                : pendientes;
+
+            const filtrados = listaBase.filter(p =>
+                normalizarTexto(p.nombre).includes(textoFiltro) ||
+                normalizarTexto(p.categoria).includes(textoFiltro)
+            );
+
+            listaAsignarQR.innerHTML = '';
+
+            if (filtrados.length === 0) {
+                listaAsignarQR.innerHTML = `<p style="grid-column: 1 / -1; color: #666; text-align: center; padding: 20px; margin: 0;">${
+                    mostrarConCodigoEnAsignador
+                        ? 'Aún no hay productos con código asignado.'
+                        : '¡Excelente! No quedan productos pendientes por asignar.'
+                }</p>`;
+                return;
+            }
+
+            filtrados.forEach(prod => {
+                const card = document.createElement('div');
+                card.className = 'assign-card';
+                const thumb = obtenerUrlOptimizada(prod.imagen, 250);
+                const cantCodigos = prod.codigos ? prod.codigos.length : 0;
+
+                card.innerHTML = `
+                    <img src="${thumb}" data-original="${prod.imagen}" alt="${prod.nombre}" loading="lazy" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
+                    <h4>${prod.nombre}</h4>
+                    <div class="assign-price">${asegurarSimboloPrecio(prod.precio)}</div>
+                    <div style="font-size: 11px; color: #6a1b9a; font-weight: bold; margin-top: 4px;">
+                        ${cantCodigos > 0 ? `${cantCodigos} código(s) · Toca para +` : 'Toca para escanear'}
+                    </div>
+                `;
+
+                card.addEventListener('click', () => abrirEscaneoParaProducto(prod));
+                listaAsignarQR.appendChild(card);
+            });
+        }
+
+        if (filtroAsignarQR) {
+            filtroAsignarQR.addEventListener('input', renderizarAsignadorQR);
+        }
+
+        if (tabPendientes && tabCompletados) {
+            tabPendientes.addEventListener('click', () => {
+                mostrarConCodigoEnAsignador = false;
+                tabPendientes.style.background = '#6a1b9a';
+                tabPendientes.style.color = 'white';
+                tabCompletados.style.background = 'white';
+                tabCompletados.style.color = '#6a1b9a';
+                renderizarAsignadorQR();
+            });
+            tabCompletados.addEventListener('click', () => {
+                mostrarConCodigoEnAsignador = true;
+                tabCompletados.style.background = '#6a1b9a';
+                tabCompletados.style.color = 'white';
+                tabPendientes.style.background = 'white';
+                tabPendientes.style.color = '#6a1b9a';
+                renderizarAsignadorQR();
+            });
+        }
+
+        // Sonido corto al escanear
+        function reproducirBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1100, ctx.currentTime);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.12);
+            } catch (e) {}
+            if (navigator.vibrate) navigator.vibrate(100);
+        }
+
+        const scannerModal = document.getElementById('scannerModal');
+        const closeScannerBtn = document.getElementById('closeScannerBtn');
+        const scannerTitle = document.getElementById('scannerTitle');
+        const scannerProductHeader = document.getElementById('scannerProductHeader');
+        const scannerStatusMsg = document.getElementById('scannerStatusMsg');
+        const scannerCodesSection = document.getElementById('scannerCodesSection');
+        const scannedCodesList = document.getElementById('scannedCodesList');
+        const btnOtroQR = document.getElementById('btn-otro-qr');
+        const btnListoQR = document.getElementById('btn-listo-qr');
+        const qrReaderDiv = document.getElementById('qr-reader');
+
+        function actualizarPillsCodigos() {
+            if (!productoAsignandoActual || !scannedCodesList) return;
+            scannedCodesList.innerHTML = '';
+            const lista = productoAsignandoActual.codigos || [];
+            lista.forEach(cod => {
+                const pill = document.createElement('span');
+                pill.className = 'code-pill';
+                pill.innerHTML = `${cod} <button type="button" title="Quitar código">&times;</button>`;
+                pill.querySelector('button').addEventListener('click', async () => {
+                    productoAsignandoActual.codigos = productoAsignandoActual.codigos.filter(c => c !== cod);
+                    await updateDoc(doc(db, "productos", productoAsignandoActual.id), {
+                        codigos: productoAsignandoActual.codigos
+                    });
+                    limpiarCacheCliente();
+                    actualizarPillsCodigos();
+                    renderizarAsignadorQR();
+                });
+                scannedCodesList.appendChild(pill);
+            });
+        }
+
+        async function detenerCamara() {
+            if (html5QrScanner) {
+                try {
+                    if (html5QrScanner.isScanning) {
+                        await html5QrScanner.stop();
+                    }
+                    html5QrScanner.clear();
+                } catch (e) {}
+                html5QrScanner = null;
+            }
+        }
+
+        async function iniciarCamaraEscaneo() {
+            await detenerCamara();
+            if (!window.Html5Qrcode) {
+                scannerStatusMsg.style.color = '#d32f2f';
+                scannerStatusMsg.textContent = 'Cargando lector de cámara, intenta de nuevo en un segundo.';
+                return;
+            }
+
+            qrReaderDiv.style.display = 'block';
+            btnOtroQR.style.display = 'none';
+            scannerStatusMsg.style.color = '#2e7d32';
+            scannerStatusMsg.textContent = 'Apunta la cámara al código de barra o QR...';
+
+            html5QrScanner = new Html5Qrcode("qr-reader");
+            try {
+                await html5QrScanner.start(
+                    { facingMode: "environment" },
+                    { fps: 12, qrbox: { width: 250, height: 150 } },
+                    onScanExitoso,
+                    () => {}
+                );
+            } catch (err) {
+                scannerStatusMsg.style.color = '#d32f2f';
+                scannerStatusMsg.textContent = 'No se pudo acceder a la cámara. Permite el acceso en tu navegador.';
+            }
+        }
+
+        async function onScanExitoso(codigoLeido) {
+            const codigoLimpio = String(codigoLeido).trim();
+            if (!codigoLimpio) return;
+
+            reproducirBeep();
+            await detenerCamara();
+
+            if (modoEscaneoActual === "BUSCAR") {
+                scannerModal.style.display = 'none';
+                if (buscadorAdmin) {
+                    buscadorAdmin.value = codigoLimpio;
+                    filtrarProductosAdmin();
+                }
+                return;
+            }
+
+            // MODO ASIGNAR A UN PRODUCTO
+            if (!productoAsignandoActual) return;
+
+            qrReaderDiv.style.display = 'none';
+
+            if (!Array.isArray(productoAsignandoActual.codigos)) {
+                productoAsignandoActual.codigos = [];
+            }
+
+            if (!productoAsignandoActual.codigos.includes(codigoLimpio)) {
+                productoAsignandoActual.codigos.push(codigoLimpio);
+                scannerStatusMsg.style.color = '#2e7d32';
+                scannerStatusMsg.textContent = 'Guardando código ' + codigoLimpio + '...';
+
+                try {
+                    await updateDoc(doc(db, "productos", productoAsignandoActual.id), {
+                        codigos: productoAsignandoActual.codigos
+                    });
+                    limpiarCacheCliente();
+                    scannerStatusMsg.textContent = 'Código guardado: ' + codigoLimpio;
+                } catch (e) {
+                    scannerStatusMsg.style.color = '#d32f2f';
+                    scannerStatusMsg.textContent = 'Error al guardar el código.';
+                }
+            } else {
+                scannerStatusMsg.style.color = '#ef6c00';
+                scannerStatusMsg.textContent = 'Este código (' + codigoLimpio + ') ya estaba guardado en este producto.';
+            }
+
+            actualizarPillsCodigos();
+            btnOtroQR.style.display = 'block';
+            renderizarAsignadorQR();
+        }
+
+        function abrirEscaneoParaProducto(prod) {
+            modoEscaneoActual = "ASIGNAR";
+            productoAsignandoActual = prod;
+
+            scannerTitle.textContent = "Asignar Código de Barra / QR";
+            scannerProductHeader.style.display = 'flex';
+            document.getElementById('scannerProdImg').src = obtenerUrlOptimizada(prod.imagen, 150);
+            document.getElementById('scannerProdName').textContent = prod.nombre;
+            document.getElementById('scannerProdPrice').textContent = asegurarSimboloPrecio(prod.precio);
+
+            scannerCodesSection.style.display = 'block';
+            actualizarPillsCodigos();
+
+            scannerModal.style.display = 'flex';
+            iniciarCamaraEscaneo();
+        }
+
+        btnOtroQR.addEventListener('click', () => {
+            iniciarCamaraEscaneo();
+        });
+
+        async function cerrarModalEscaner() {
+            await detenerCamara();
+            scannerModal.style.display = 'none';
+            if (modoEscaneoActual === "ASIGNAR") {
+                cargarProductosAdmin();
+            }
+        }
+
+        btnListoQR.addEventListener('click', cerrarModalEscaner);
+        closeScannerBtn.addEventListener('click', cerrarModalEscaner);
+
+        const btnEscanearAdmin = document.getElementById('btn-escanear-admin');
+        if (btnEscanearAdmin) {
+            btnEscanearAdmin.addEventListener('click', () => {
+                modoEscaneoActual = "BUSCAR";
+                productoAsignandoActual = null;
+                scannerTitle.textContent = "Buscar Producto por Código";
+                scannerProductHeader.style.display = 'none';
+                scannerCodesSection.style.display = 'none';
+                scannerModal.style.display = 'flex';
+                iniciarCamaraEscaneo();
             });
         }
     </script>
