@@ -115,13 +115,13 @@
 
                     <div style="flex: 1; min-width: 100%; background: white; padding: 14px; border-radius: 12px; border: 1.5px dashed #ab47bc; box-sizing: border-box;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                            <span style="font-size: 14px; color: #6a1b9a; font-weight: bold;">Códigos de Barra / QR del producto (opcional):</span>
+                            <span style="font-size: 14px; color: #6a1b9a; font-weight: bold;">Códigos de Barra / QR del producto (Obligatorio *):</span>
                             <button type="button" id="btn-escanear-en-form" style="background: #6a1b9a; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">
                                 + Escanear Código QR / Barra
                             </button>
                         </div>
                         <div id="form-codes-list" class="scanned-codes-list" style="justify-content: flex-start; margin-top: 8px;">
-                            <span style="font-size: 12px; color: #777;">Ningún código escaneado aún</span>
+                            <span style="font-size: 12px; color: #d32f2f; font-weight: 600;">Obligatorio: escanea al menos 1 código</span>
                         </div>
                     </div>
 
@@ -286,7 +286,7 @@
             if (!cont) return;
             cont.innerHTML = '';
             if (!codigosFormularioActual || codigosFormularioActual.length === 0) {
-                cont.innerHTML = '<span style="font-size: 12px; color: #777;">Ningún código escaneado aún</span>';
+                cont.innerHTML = '<span style="font-size: 12px; color: #d32f2f; font-weight: 600;">Obligatorio: escanea al menos 1 código</span>';
                 return;
             }
             codigosFormularioActual.forEach(cod => {
@@ -645,6 +645,11 @@
 
         formulario.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            if (!codigosFormularioActual || codigosFormularioActual.length === 0) {
+                alert("Es obligatorio escanear al menos un código de barra / QR para guardar el producto.");
+                return;
+            }
 
             try { await auth.currentUser.reload(); } catch (error) {
                 alert("Tu cuenta ha sido desactivada o eliminada.");
