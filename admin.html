@@ -113,6 +113,18 @@
                         </div>
                     </div>
 
+                    <div style="flex: 1; min-width: 100%; background: white; padding: 14px; border-radius: 12px; border: 1.5px dashed #ab47bc; box-sizing: border-box;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <span style="font-size: 14px; color: #6a1b9a; font-weight: bold;">Códigos de Barra / QR del producto (opcional):</span>
+                            <button type="button" id="btn-escanear-en-form" style="background: #6a1b9a; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">
+                                + Escanear Código QR / Barra
+                            </button>
+                        </div>
+                        <div id="form-codes-list" class="scanned-codes-list" style="justify-content: flex-start; margin-top: 8px;">
+                            <span style="font-size: 12px; color: #777;">Ningún código escaneado aún</span>
+                        </div>
+                    </div>
+
                     <div style="display: flex; flex-wrap: wrap; gap: 10px; width: 100%; margin-top: 4px;">
                         <button id="btn-guardar-form" type="submit" style="flex: 2; min-width: 180px; background: linear-gradient(135deg, #ff9800, #ef6c00); color: white; border: none; padding: 13px 20px; cursor: pointer; font-weight: bold; border-radius: 10px; font-size: 16px; box-shadow: 0 4px 12px rgba(239,108,0,0.25);">Guardar Producto</button>
                         <button type="button" id="btn-cancelar-edicion" style="display: none; flex: 1; background: #757575; color: white; border: none; padding: 13px 20px; cursor: pointer; font-weight: bold; border-radius: 10px; font-size: 16px;">Cancelar Edición</button>
@@ -267,6 +279,28 @@
         let idProductoEditando = null;
         let urlImagenActual = "";
         let imagenComprimidaLista = null;
+        let codigosFormularioActual = [];
+
+        function renderizarCodigosEnFormulario() {
+            const cont = document.getElementById('form-codes-list');
+            if (!cont) return;
+            cont.innerHTML = '';
+            if (!codigosFormularioActual || codigosFormularioActual.length === 0) {
+                cont.innerHTML = '<span style="font-size: 12px; color: #777;">Ningún código escaneado aún</span>';
+                return;
+            }
+            codigosFormularioActual.forEach(cod => {
+                const pill = document.createElement('span');
+                pill.className = 'code-pill';
+                pill.innerHTML = `${cod} <button type="button" title="Quitar">&times;</button>`;
+                pill.querySelector('button').addEventListener('click', () => {
+                    codigosFormularioActual = codigosFormularioActual.filter(c => c !== cod);
+                    renderizarCodigosEnFormulario();
+                    actualizarPillsCodigos();
+                });
+                cont.appendChild(pill);
+            });
+        }
 
         const formCategoria = document.getElementById('form-categoria');
         const inputCatNombre = document.getElementById('cat-nombre');
@@ -599,6 +633,8 @@
             idProductoEditando = null;
             urlImagenActual = "";
             imagenComprimidaLista = null;
+            codigosFormularioActual = [];
+            renderizarCodigosEnFormulario();
             previewContainer.style.display = 'none';
             btnGuardarForm.innerText = "Guardar Producto";
             btnGuardarForm.style.background = "linear-gradient(135deg, #ff9800, #ef6c00)";
@@ -645,7 +681,8 @@
                     precio: precioConSimbolo,
                     descripcion: document.getElementById('prod-desc').value.trim(),
                     imagen: urlImagenFinal,
-                    categoria: document.getElementById('prod-categoria').value
+                    categoria: document.getElementById('prod-categoria').value,
+                    codigos: codigosFormularioActual
                 };
 
                 if (idProductoEditando) {
@@ -743,6 +780,8 @@
                         urlImagenActual = data.imagen;
                         inputImgFile.value = '';
                         imagenComprimidaLista = null;
+                        codigosFormularioActual = [...codigosArr];
+                        renderizarCodigosEnFormulario();
 
                         if (data.imagen && data.imagen.startsWith('data:image')) {
                             document.getElementById('prod-img-url').value = '';
@@ -955,21 +994,30 @@
         const qrReaderDiv = document.getElementById('qr-reader');
 
         function actualizarPillsCodigos() {
-            if (!productoAsignandoActual || !scannedCodesList) return;
+            if (!scannedCodesList) return;
             scannedCodesList.innerHTML = '';
-            const lista = productoAsignandoActual.codigos || [];
+            const lista = modoEscaneoActual === "FORMULARIO"
+                ? codigosFormularioActual
+                : (productoAsignandoActual ? (productoAsignandoActual.codigos || []) : []);
+
             lista.forEach(cod => {
                 const pill = document.createElement('span');
                 pill.className = 'code-pill';
                 pill.innerHTML = `${cod} <button type="button" title="Quitar código">&times;</button>`;
                 pill.querySelector('button').addEventListener('click', async () => {
-                    productoAsignandoActual.codigos = productoAsignandoActual.codigos.filter(c => c !== cod);
-                    await updateDoc(doc(db, "productos", productoAsignandoActual.id), {
-                        codigos: productoAsignandoActual.codigos
-                    });
-                    limpiarCacheCliente();
-                    actualizarPillsCodigos();
-                    renderizarAsignadorQR();
+                    if (modoEscaneoActual === "FORMULARIO") {
+                        codigosFormularioActual = codigosFormularioActual.filter(c => c !== cod);
+                        renderizarCodigosEnFormulario();
+                        actualizarPillsCodigos();
+                    } else if (productoAsignandoActual) {
+                        productoAsignandoActual.codigos = productoAsignandoActual.codigos.filter(c => c !== cod);
+                        await updateDoc(doc(db, "productos", productoAsignandoActual.id), {
+                            codigos: productoAsignandoActual.codigos
+                        });
+                        limpiarCacheCliente();
+                        actualizarPillsCodigos();
+                        renderizarAsignadorQR();
+                    }
                 });
                 scannedCodesList.appendChild(pill);
             });
@@ -1027,6 +1075,22 @@
                     buscadorAdmin.value = codigoLimpio;
                     filtrarProductosAdmin();
                 }
+                return;
+            }
+
+            if (modoEscaneoActual === "FORMULARIO") {
+                qrReaderDiv.style.display = 'none';
+                if (!codigosFormularioActual.includes(codigoLimpio)) {
+                    codigosFormularioActual.push(codigoLimpio);
+                    scannerStatusMsg.style.color = '#2e7d32';
+                    scannerStatusMsg.textContent = 'Código agregado al formulario: ' + codigoLimpio;
+                } else {
+                    scannerStatusMsg.style.color = '#ef6c00';
+                    scannerStatusMsg.textContent = 'Ese código ya está en la lista de este producto.';
+                }
+                renderizarCodigosEnFormulario();
+                actualizarPillsCodigos();
+                btnOtroQR.style.display = 'block';
                 return;
             }
 
@@ -1095,6 +1159,21 @@
 
         btnListoQR.addEventListener('click', cerrarModalEscaner);
         closeScannerBtn.addEventListener('click', cerrarModalEscaner);
+
+        const btnEscanearEnForm = document.getElementById('btn-escanear-en-form');
+        if (btnEscanearEnForm) {
+            btnEscanearEnForm.addEventListener('click', () => {
+                modoEscaneoActual = "FORMULARIO";
+                productoAsignandoActual = null;
+                const nombreTemp = document.getElementById('prod-nombre').value.trim() || "Nuevo Producto";
+                scannerTitle.textContent = "Escanear Código para: " + nombreTemp;
+                scannerProductHeader.style.display = 'none';
+                scannerCodesSection.style.display = 'block';
+                actualizarPillsCodigos();
+                scannerModal.style.display = 'flex';
+                iniciarCamaraEscaneo();
+            });
+        }
 
         const btnEscanearAdmin = document.getElementById('btn-escanear-admin');
         if (btnEscanearAdmin) {
