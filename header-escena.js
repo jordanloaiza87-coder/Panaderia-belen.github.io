@@ -1,6 +1,6 @@
 /*
- * Escena animada del encabezado: el chef camina de un lado a otro, se acerca al horno,
- * los panes salen saltando a la canasta y vuelve caminando. Se repite sin parar.
+ * Escena animada del encabezado: el horno de barro se aviva, echa humo
+ * y los panes salen saltando a la canasta. Se repite sin parar.
  * Las animaciones están en style.css (sección "ESCENA DEL ENCABEZADO").
  * Uso: <script src="header-escena.js" defer></script>
  */
@@ -13,22 +13,6 @@
     escena.setAttribute('aria-hidden', 'true');
 
     escena.innerHTML = `
-        <div class="escena-pista">
-            <div class="escena-chef">
-                <div class="escena-chef-giro">
-                    <div class="escena-chef-paso">
-                        <img class="ec-cuerpo" src="imagen/chef-cuerpo.webp" alt="">
-                        <div class="ec-cabeza">
-                            <img src="imagen/chef-cabeza.webp" alt="">
-                            <img class="ec-gorro" src="imagen/chef-gorro.webp" alt="">
-                        </div>
-                        <img class="ec-brazo" src="imagen/chef-brazo.webp" alt="">
-                    </div>
-                </div>
-                <span class="ec-sombra"></span>
-            </div>
-        </div>
-
         <div class="horno-grupo">
             <span class="humo h1"></span><span class="humo h2"></span><span class="humo h3"></span>
             <svg class="horno" viewBox="0 0 120 90">

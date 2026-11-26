@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'panaderia-belen-static-v10';
+const STATIC_CACHE = 'panaderia-belen-static-v11';
 const IMAGE_CACHE = 'panaderia-belen-fotos-v2';
 
 const ASSETS_TO_CACHE = [
