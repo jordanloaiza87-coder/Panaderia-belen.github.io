@@ -22,9 +22,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#ef6c00">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&text=Bel%C3%A9n&display=block" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <script src="splash.js" data-sub="Preparando la vitrina de tortas"></script>
     <header>
         <div class="header-brand">
             <img src="imagen/apple-touch-icon.png" alt="Logo Belén" class="logo-header">
@@ -44,11 +49,6 @@
                 <input type="search" id="buscador-reposteria" class="search-input" placeholder="Buscar tortas, kuchen, empanadas...">
             </div>
             <div id="filtros-categorias" class="category-chips"></div>
-        </div>
-
-        <div id="pantalla-carga" class="loading-box">
-            <h2>Preparando vitrina...</h2>
-            <p>Descargando tortas y kuchenes, por favor espera.</p>
         </div>
 
         <div id="sin-resultados" class="empty-search-box" style="display: none;">
@@ -76,6 +76,8 @@
 
     <div id="offline-toast" class="offline-toast">Catálogo guardado en tu celular para carga rápida</div>
 
+    <button type="button" id="btn-arriba" class="to-top" aria-label="Volver arriba">↑</button>
+
     <!-- MODAL PARA VER DETALLE DEL PRODUCTO -->
     <div id="productModal" class="modal">
         <div class="modal-content">
@@ -92,9 +94,31 @@
     <script>
         const modal = document.getElementById("productModal");
         const closeBtn = document.querySelector(".close-btn");
-        closeBtn.onclick = () => modal.style.display = "none";
-        window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
-        window.addEventListener("keydown", (e) => { if (e.key === "Escape") modal.style.display = "none"; });
+
+        // Cierra el modal con animación de salida
+        function cerrarModal() {
+            if (modal.style.display !== "flex" || modal.classList.contains("closing")) return;
+            modal.classList.add("closing");
+            setTimeout(() => {
+                modal.style.display = "none";
+                modal.classList.remove("closing");
+            }, 220);
+        }
+
+        closeBtn.onclick = cerrarModal;
+        window.onclick = (e) => { if (e.target === modal) cerrarModal(); };
+        window.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrarModal(); });
+
+        // Sombra en la barra de búsqueda al hacer scroll + botón "volver arriba"
+        const barraFija = document.querySelector(".sticky-controls");
+        const btnArriba = document.getElementById("btn-arriba");
+        function alHacerScroll() {
+            const y = window.scrollY;
+            if (barraFija) barraFija.classList.toggle("stuck", barraFija.getBoundingClientRect().top <= 0 && y > 50);
+            if (btnArriba) btnArriba.classList.toggle("show", y > 500);
+        }
+        window.addEventListener("scroll", alHacerScroll, { passive: true });
+        if (btnArriba) btnArriba.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -133,10 +157,42 @@
             "FRUTERIA": "grid-fruteria"
         };
 
+        // Muestra todos los precios igual: $1.300, $650, etc.
         function formatearPrecio(precio) {
             if (!precio) return "";
             const str = String(precio).trim();
+            const sinSigno = str.replace(/^\$\s*/, "");
+            if (/^[\d.\s]+$/.test(sinSigno)) {
+                const numero = Number(sinSigno.replace(/[.\s]/g, ""));
+                if (!isNaN(numero)) return "$" + numero.toLocaleString("es-CL");
+            }
             return str.startsWith("$") ? str : `$${str}`;
+        }
+
+        // Anima las tarjetas de cada carrusel cuando aparece en pantalla
+        let yaSeMostroCatalogo = false;
+        const observadorGrillas = ('IntersectionObserver' in window)
+            ? new IntersectionObserver((entradas) => {
+                entradas.forEach(e => {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('in-view');
+                        observadorGrillas.unobserve(e.target);
+                    }
+                });
+            }, { rootMargin: '0px 0px -40px 0px' })
+            : null;
+
+        function prepararAnimacion(grilla) {
+            grilla.classList.add('reveal');
+            grilla.querySelectorAll('.product-card').forEach((tarjeta, i) => {
+                tarjeta.style.setProperty('--i', Math.min(i, 8));
+                if (yaSeMostroCatalogo) tarjeta.classList.add('no-anim');
+            });
+            if (observadorGrillas && !yaSeMostroCatalogo) {
+                observadorGrillas.observe(grilla);
+            } else {
+                grilla.classList.add('in-view');
+            }
         }
 
         function normalizarTexto(texto) {
@@ -168,7 +224,6 @@
         }
 
         function renderizarReposteria(productos) {
-            const pantallaCarga = document.getElementById('pantalla-carga');
             const filtrosContainer = document.getElementById('filtros-categorias');
 
             Object.values(mapaGrillas).forEach(id => {
@@ -176,7 +231,7 @@
                 if (el) el.innerHTML = '';
             });
 
-            if (pantallaCarga) pantallaCarga.style.display = 'none';
+            window.ocultarSplash();
 
             productos.forEach((data, index) => {
                 const catUpper = (data.categoria || '').trim().toUpperCase();
@@ -186,12 +241,12 @@
                 if (contenedorGrilla) {
                     const precioFormateado = formatearPrecio(data.precio);
                     const tarjeta = document.createElement('div');
-                    tarjeta.className = 'product-card';
+                    const agotado = !data.stock || Number(data.stock) <= 0;
+                    tarjeta.className = 'product-card' + (agotado ? ' is-agotado' : '');
 
-                    let textoStock = `<p style="color: #2e7d32; font-size: 12px; font-weight: bold; margin: 6px 0 0;">Stock: ${data.stock}</p>`;
-                    if (!data.stock || Number(data.stock) <= 0) {
-                        textoStock = `<p style="color: #d32f2f; font-size: 12px; font-weight: bold; margin: 6px 0 0;">Agotado</p>`;
-                    }
+                    const textoStock = agotado
+                        ? `<p class="stock-badge agotado">Agotado</p>`
+                        : `<p class="stock-badge">Stock: ${data.stock}</p>`;
 
                     const esPrioritaria = index < 6;
                     const loadingAttr = esPrioritaria ? 'eager' : 'lazy';
@@ -199,7 +254,11 @@
                     const thumbUrl = obtenerUrlOptimizada(data.imagen, 400);
 
                     tarjeta.innerHTML = `
-                        <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
+                        <div class="card-img-wrap">
+                            <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
+                            ${agotado ? '<span class="ribbon-agotado">AGOTADO</span>' : ''}
+                            <span class="card-hover-hint">Ver detalle</span>
+                        </div>
                         <div class="info">
                             <span class="card-cat-tag">${catUpper}</span>
                             <h3>${data.nombre}</h3>
@@ -224,6 +283,9 @@
                     contenedorGrilla.prepend(tarjeta);
                 }
             });
+
+            document.querySelectorAll('#reposteria-container .product-grid').forEach(prepararAnimacion);
+            if (productos.length > 0) yaSeMostroCatalogo = true;
 
             if (filtrosContainer) {
                 filtrosContainer.innerHTML = '';
@@ -283,14 +345,26 @@
 
             } catch (error) {
                 console.error("Error al cargar repostería: ", error);
+                window.mostrarErrorSplash('Hubo un error al cargar la vitrina. Revisa tu conexión.');
             }
         }
 
         function seleccionarCategoria(catNombre, botonChip) {
             categoriaActiva = catNombre;
             document.querySelectorAll('.category-chips .chip').forEach(c => c.classList.remove('active'));
-            if (botonChip) botonChip.classList.add('active');
+            if (botonChip) {
+                botonChip.classList.add('active');
+                botonChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
             aplicarFiltros();
+
+            // Pequeña transición al cambiar de categoría
+            const contenedor = document.getElementById('reposteria-container');
+            if (contenedor) {
+                contenedor.classList.remove('swap-anim');
+                void contenedor.offsetWidth;
+                contenedor.classList.add('swap-anim');
+            }
         }
 
         function aplicarFiltros() {

@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'panaderia-belen-static-v4';
+const STATIC_CACHE = 'panaderia-belen-static-v9';
 const IMAGE_CACHE = 'panaderia-belen-fotos-v2';
 
 const ASSETS_TO_CACHE = [
@@ -9,6 +9,11 @@ const ASSETS_TO_CACHE = [
     './manifest.json',
     './imagen/logo.png',
     './imagen/apple-touch-icon.png',
+    './imagen/chef-cuerpo.webp',
+    './imagen/chef-brazo.webp',
+    './imagen/chef-cabeza.webp',
+    './imagen/chef-gorro.webp',
+    './splash.js',
     './imagen/icon-192.png',
     './imagen/icon-512.png'
 ];

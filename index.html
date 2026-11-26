@@ -22,10 +22,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#ef6c00">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&text=Bel%C3%A9n&display=block" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 </head>
 <body>
+    <script src="splash.js" data-sub="Horneando el menú del día"></script>
     <header>
         <div class="header-brand">
             <img src="imagen/apple-touch-icon.png" alt="Logo Belén" class="logo-header">
@@ -42,21 +47,19 @@
 
     <div class="container">
         <a href="tortas.html" class="banner-pasteleria">
-            <span>Catálogo de Pastelería y Tortas</span>
+            <span class="banner-label"><span class="banner-icon" aria-hidden="true">🎂</span>Catálogo de Pastelería y Tortas</span>
             <span class="banner-arrow">Ver todo →</span>
         </a>
 
         <div class="sticky-controls">
             <div class="search-wrapper">
                 <input type="search" id="buscador-productos" class="search-input" placeholder="Buscar pan, bebidas, lácteos o código...">
-                <button type="button" id="btn-escanear-catalogo" class="btn-scan-search">Escanear</button>
+                <button type="button" id="btn-escanear-catalogo" class="btn-scan-search" aria-label="Escanear código">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 8v8M11 8v8M14 8v8M17 8v8"/></svg>
+                    <span class="scan-label">Escanear</span>
+                </button>
             </div>
             <div id="filtros-categorias" class="category-chips"></div>
-        </div>
-
-        <div id="pantalla-carga" class="loading-box">
-            <h2>Horneando el menú...</h2>
-            <p>Descargando catálogo, por favor espera unos segundos.</p>
         </div>
 
         <div id="sin-resultados" class="empty-search-box" style="display: none;">
@@ -68,6 +71,8 @@
     </div>
 
     <div id="offline-toast" class="offline-toast">Catálogo guardado en tu celular para carga rápida</div>
+
+    <button type="button" id="btn-arriba" class="to-top" aria-label="Volver arriba">↑</button>
 
     <div id="productModal" class="modal">
         <div class="modal-content">
@@ -94,9 +99,30 @@
         const modal = document.getElementById("productModal");
         const closeBtn = document.querySelector(".close-btn");
 
-        closeBtn.onclick = () => modal.style.display = "none";
-        window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
-        window.addEventListener("keydown", (e) => { if (e.key === "Escape") modal.style.display = "none"; });
+        // Cierra el modal con animación de salida
+        function cerrarModal() {
+            if (modal.style.display !== "flex" || modal.classList.contains("closing")) return;
+            modal.classList.add("closing");
+            setTimeout(() => {
+                modal.style.display = "none";
+                modal.classList.remove("closing");
+            }, 220);
+        }
+
+        closeBtn.onclick = cerrarModal;
+        window.onclick = (e) => { if (e.target === modal) cerrarModal(); };
+        window.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrarModal(); });
+
+        // Sombra en la barra de búsqueda al hacer scroll + botón "volver arriba"
+        const barraFija = document.querySelector(".sticky-controls");
+        const btnArriba = document.getElementById("btn-arriba");
+        function alHacerScroll() {
+            const y = window.scrollY;
+            if (barraFija) barraFija.classList.toggle("stuck", barraFija.getBoundingClientRect().top <= 0 && y > 50);
+            if (btnArriba) btnArriba.classList.toggle("show", y > 500);
+        }
+        window.addEventListener("scroll", alHacerScroll, { passive: true });
+        if (btnArriba) btnArriba.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
         // Registro de Service Worker para guardar fotos y páginas en el celular
         if ('serviceWorker' in navigator) {
@@ -146,10 +172,41 @@
         const CACHE_KEY = "panaderia_belen_catalogo_v1";
         const categoriasExcluidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES"];
 
+        // Muestra todos los precios igual: $1.300, $650, etc.
         function formatearPrecio(precio) {
             if (!precio) return "";
             const str = String(precio).trim();
+            const sinSigno = str.replace(/^\$\s*/, "");
+            if (/^[\d.\s]+$/.test(sinSigno)) {
+                const numero = Number(sinSigno.replace(/[.\s]/g, ""));
+                if (!isNaN(numero)) return "$" + numero.toLocaleString("es-CL");
+            }
             return str.startsWith("$") ? str : `$${str}`;
+        }
+
+        // Anima las tarjetas de cada carrusel cuando aparece en pantalla
+        let yaSeMostroCatalogo = false;
+        const observadorGrillas = ('IntersectionObserver' in window)
+            ? new IntersectionObserver((entradas) => {
+                entradas.forEach(e => {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('in-view');
+                        observadorGrillas.unobserve(e.target);
+                    }
+                });
+            }, { rootMargin: '0px 0px -40px 0px' })
+            : null;
+
+        function prepararAnimacion(grilla) {
+            grilla.querySelectorAll('.product-card').forEach((tarjeta, i) => {
+                tarjeta.style.setProperty('--i', Math.min(i, 8));
+                if (yaSeMostroCatalogo) tarjeta.classList.add('no-anim');
+            });
+            if (observadorGrillas && !yaSeMostroCatalogo) {
+                observadorGrillas.observe(grilla);
+            } else {
+                grilla.classList.add('in-view');
+            }
         }
 
         function normalizarTexto(texto) {
@@ -189,7 +246,6 @@
         }
 
         function renderizarCatalogo(productos, categorias) {
-            const pantallaCarga = document.getElementById('pantalla-carga');
             const categoriasContainer = document.getElementById('categorias-container');
             const filtrosContainer = document.getElementById('filtros-categorias');
 
@@ -202,7 +258,7 @@
                 h2.textContent = catNombre;
 
                 const divGrid = document.createElement('div');
-                divGrid.className = 'product-grid';
+                divGrid.className = 'product-grid reveal';
                 divGrid.id = 'grid-' + catNombre.replace(/\s+/g, '-');
 
                 if (categoriasContainer) {
@@ -211,7 +267,7 @@
                 }
             });
 
-            if (pantallaCarga) pantallaCarga.style.display = 'none';
+            window.ocultarSplash();
 
             productos.forEach((data, index) => {
                 const catUpper = data.categoria.trim().toUpperCase();
@@ -231,7 +287,10 @@
                     const thumbUrl = obtenerUrlOptimizada(data.imagen, 400);
 
                     tarjeta.innerHTML = `
-                        <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
+                        <div class="card-img-wrap">
+                            <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
+                            <span class="card-hover-hint">Ver detalle</span>
+                        </div>
                         <div class="info">
                             <span class="card-cat-tag">${catUpper}</span>
                             <h3>${data.nombre}</h3>
@@ -255,6 +314,9 @@
                     contenedorGrilla.prepend(tarjeta);
                 }
             });
+
+            document.querySelectorAll('#categorias-container .product-grid').forEach(prepararAnimacion);
+            if (productos.length > 0) yaSeMostroCatalogo = true;
 
             if (filtrosContainer) {
                 filtrosContainer.innerHTML = '';
@@ -284,7 +346,6 @@
         }
 
         async function cargarCategoriasYProductos() {
-            const pantallaCarga = document.getElementById('pantalla-carga');
 
             // 1. Carga instantánea desde memoria local
             try {
@@ -336,17 +397,26 @@
 
             } catch (error) {
                 console.error("Error al cargar los datos: ", error);
-                if (pantallaCarga && pantallaCarga.style.display !== 'none') {
-                    pantallaCarga.innerHTML = '<p style="color:#d32f2f; font-weight:bold;">Hubo un error al cargar el catálogo. Revisa tu conexión.</p>';
-                }
+                window.mostrarErrorSplash('Hubo un error al cargar el catálogo. Revisa tu conexión.');
             }
         }
 
         function seleccionarCategoria(catNombre, botonChip) {
             categoriaActiva = catNombre;
             document.querySelectorAll('.category-chips .chip').forEach(c => c.classList.remove('active'));
-            if (botonChip) botonChip.classList.add('active');
+            if (botonChip) {
+                botonChip.classList.add('active');
+                botonChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
             aplicarFiltros();
+
+            // Pequeña transición al cambiar de categoría
+            const contenedor = document.getElementById('categorias-container');
+            if (contenedor) {
+                contenedor.classList.remove('swap-anim');
+                void contenedor.offsetWidth;
+                contenedor.classList.add('swap-anim');
+            }
         }
 
         function aplicarFiltros() {
