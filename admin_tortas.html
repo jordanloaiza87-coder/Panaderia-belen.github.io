@@ -184,6 +184,10 @@
         const previewInfo = document.getElementById('preview-info');
 
         let idProductoEditando = null;
+        let precioAnteriorEditando = null; // para saber si el precio cambió al editar
+
+        // Compara precios ignorando el $ y los puntos de miles (ej: "$1.500" == "1500")
+        function precioSoloNumeros(p) { return String(p || "").replace(/[^0-9]/g, ""); }
         let urlImagenActual = "";
         let imagenComprimidaLista = null;
 
@@ -323,6 +327,7 @@
         function resetearFormulario() {
             formulario.reset();
             idProductoEditando = null;
+            precioAnteriorEditando = null;
             urlImagenActual = "";
             imagenComprimidaLista = null;
             previewContainer.style.display = 'none';
@@ -368,6 +373,11 @@
                     imagen: urlImagenFinal,
                     categoria: document.getElementById('prod-categoria').value
                 };
+
+                // Si cambió el precio, se guarda la fecha para avisar a los empleados en el catálogo
+                if (idProductoEditando && precioSoloNumeros(precioConSimbolo) !== precioSoloNumeros(precioAnteriorEditando)) {
+                    datosProducto.precioActualizadoEn = Date.now();
+                }
 
                 if (idProductoEditando) {
                     await updateDoc(doc(db, "productos", idProductoEditando), datosProducto);
@@ -440,6 +450,7 @@
                         tarjeta.querySelector('.btn-editar').addEventListener('click', () => {
                             document.getElementById('prod-nombre').value = data.nombre;
                             inputPrecio.value = asegurarSimboloPrecio(data.precio);
+                            precioAnteriorEditando = data.precio;
                             document.getElementById('prod-stock').value = data.stock || '';
                             document.getElementById('prod-desc').value = data.descripcion || '';
                             document.getElementById('prod-categoria').value = data.categoria;

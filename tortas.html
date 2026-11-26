@@ -49,6 +49,14 @@
             <div class="search-wrapper">
                 <input type="search" id="buscador-reposteria" class="search-input" placeholder="Buscar tortas, kuchen, empanadas...">
             </div>
+            <div class="controles-extra">
+                <span id="estado-precios" class="estado-precios" role="status">Revisando precios...</span>
+                <button type="button" id="btn-vista" class="btn-vista" aria-pressed="false">
+                    <svg class="icono-lista" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>
+                    <svg class="icono-fotos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>
+                    <span class="vista-label">Lista</span>
+                </button>
+            </div>
             <div id="filtros-categorias" class="category-chips"></div>
         </div>
 
@@ -88,6 +96,7 @@
                 <h2 id="modalName"></h2>
                 <p id="modalDesc"></p>
                 <div id="modalPrice" class="modal-price"></div>
+                <p id="modalFecha" class="modal-fecha"></p>
             </div>
         </div>
     </div>
@@ -128,6 +137,8 @@
         }
     </script>
 
+    <script src="utilidades.js"></script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getFirestore, collection, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -146,7 +157,25 @@
 
         enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
 
+        const B = window.Belen;
+        const estadoPrecios = B.crearEstadoPrecios(document.getElementById('estado-precios'));
+        B.iniciarSelectorVista(document.getElementById('btn-vista'), document.getElementById('reposteria-container'));
+
+        // Vista de lista: cada categoría se pliega/despliega al tocar su título
+        const categoriasAbiertas = new Set();
+        document.getElementById('reposteria-container').addEventListener('click', (e) => {
+            const titulo = e.target.closest('.section-title');
+            if (!titulo) return;
+            const cat = titulo.dataset.categoria;
+            if (titulo.classList.toggle('abierta')) categoriasAbiertas.add(cat);
+            else categoriasAbiertas.delete(cat);
+        });
+        document.querySelectorAll('#reposteria-container .section-title').forEach(t => {
+            t.innerHTML = `<span class="titulo-cat">${t.textContent}</span><span class="cuenta-cat"></span>`;
+        });
+
         let categoriaActiva = "TODAS";
+        let productosActuales = [];
         const CACHE_KEY = "panaderia_belen_reposteria_v1";
         const categoriasValidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES", "FRUTERIA"];
 
@@ -158,17 +187,7 @@
             "FRUTERIA": "grid-fruteria"
         };
 
-        // Muestra todos los precios igual: $1.300, $650, etc.
-        function formatearPrecio(precio) {
-            if (!precio) return "";
-            const str = String(precio).trim();
-            const sinSigno = str.replace(/^\$\s*/, "");
-            if (/^[\d.\s]+$/.test(sinSigno)) {
-                const numero = Number(sinSigno.replace(/[.\s]/g, ""));
-                if (!isNaN(numero)) return "$" + numero.toLocaleString("es-CL");
-            }
-            return str.startsWith("$") ? str : `$${str}`;
-        }
+        const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
         // Anima las tarjetas de cada carrusel cuando aparece en pantalla
         let yaSeMostroCatalogo = false;
@@ -196,15 +215,6 @@
             }
         }
 
-        function normalizarTexto(texto) {
-            return (texto || "")
-                .toString()
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .trim();
-        }
-
         function obtenerUrlOptimizada(url, ancho = 400) {
             if (!url || typeof url !== 'string') return '';
             if (url.startsWith('data:') || !url.startsWith('http')) return url;
@@ -224,8 +234,70 @@
             });
         }
 
+        // Detalle del producto con fecha del último cambio de precio
+        function abrirDetalle(data) {
+            const modalImgEl = document.getElementById("modalImg");
+            modalImgEl.onerror = function() {
+                if (this.src !== data.imagen) this.src = data.imagen;
+            };
+            modalImgEl.src = obtenerUrlOptimizada(data.imagen, 800);
+            modalImgEl.alt = data.nombre;
+            document.getElementById("modalName").innerText = data.nombre;
+            document.getElementById("modalDesc").innerText = data.descripcion || '';
+            document.getElementById("modalPrice").innerText = B.formatearPrecio(data.precio);
+
+            const fecha = document.getElementById("modalFecha");
+            if (data.precioActualizadoEn) {
+                fecha.textContent = `Precio actualizado el ${B.fechaCorta(data.precioActualizadoEn)}`;
+                fecha.classList.toggle('nuevo', B.esPrecioNuevo(data.precioActualizadoEn));
+            } else {
+                fecha.textContent = '';
+            }
+
+            document.getElementById("productModal").style.display = "flex";
+        }
+
+        function crearTarjeta(data, catUpper, index) {
+            const precioFormateado = B.formatearPrecio(data.precio);
+            const tarjeta = document.createElement('div');
+            const agotado = !data.stock || Number(data.stock) <= 0;
+            tarjeta.className = 'product-card' + (agotado ? ' is-agotado' : '');
+            tarjeta.dataset.nombre = data.nombre || '';
+            tarjeta.dataset.buscar = `${data.nombre || ''} ${catUpper}`;
+
+            const textoStock = agotado
+                ? `<p class="stock-badge agotado">Agotado</p>`
+                : `<p class="stock-badge">Stock: ${esc(data.stock)}</p>`;
+
+            const esPrioritaria = index < 6;
+            const loadingAttr = esPrioritaria ? 'eager' : 'lazy';
+            const priorityAttr = esPrioritaria ? 'fetchpriority="high"' : '';
+            const thumbUrl = obtenerUrlOptimizada(data.imagen, 400);
+            const nuevo = B.esPrecioNuevo(data.precioActualizadoEn)
+                ? `<span class="badge-precio-nuevo" title="Cambió el ${B.fechaCorta(data.precioActualizadoEn)}">Precio nuevo</span>`
+                : '';
+
+            tarjeta.innerHTML = `
+                <div class="card-img-wrap">
+                    <img src="${thumbUrl}" data-original="${esc(data.imagen)}" alt="${esc(data.nombre)}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
+                    ${agotado ? '<span class="ribbon-agotado">AGOTADO</span>' : ''}
+                    <span class="card-hover-hint">Ver detalle</span>
+                </div>
+                <div class="info">
+                    <div class="card-meta"><span class="card-cat-tag">${esc(catUpper)}</span>${nuevo}</div>
+                    <h3>${esc(data.nombre)}</h3>
+                    <p class="price">${esc(precioFormateado)}</p>
+                    ${textoStock}
+                </div>
+            `;
+
+            tarjeta.addEventListener('click', () => abrirDetalle(data));
+            return tarjeta;
+        }
+
         function renderizarReposteria(productos) {
             const filtrosContainer = document.getElementById('filtros-categorias');
+            productosActuales = productos;
 
             Object.values(mapaGrillas).forEach(id => {
                 const el = document.getElementById(id);
@@ -238,54 +310,13 @@
                 const catUpper = (data.categoria || '').trim().toUpperCase();
                 const idGrilla = mapaGrillas[catUpper];
                 const contenedorGrilla = idGrilla ? document.getElementById(idGrilla) : null;
-
-                if (contenedorGrilla) {
-                    const precioFormateado = formatearPrecio(data.precio);
-                    const tarjeta = document.createElement('div');
-                    const agotado = !data.stock || Number(data.stock) <= 0;
-                    tarjeta.className = 'product-card' + (agotado ? ' is-agotado' : '');
-
-                    const textoStock = agotado
-                        ? `<p class="stock-badge agotado">Agotado</p>`
-                        : `<p class="stock-badge">Stock: ${data.stock}</p>`;
-
-                    const esPrioritaria = index < 6;
-                    const loadingAttr = esPrioritaria ? 'eager' : 'lazy';
-                    const priorityAttr = esPrioritaria ? 'fetchpriority="high"' : '';
-                    const thumbUrl = obtenerUrlOptimizada(data.imagen, 400);
-
-                    tarjeta.innerHTML = `
-                        <div class="card-img-wrap">
-                            <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
-                            ${agotado ? '<span class="ribbon-agotado">AGOTADO</span>' : ''}
-                            <span class="card-hover-hint">Ver detalle</span>
-                        </div>
-                        <div class="info">
-                            <span class="card-cat-tag">${catUpper}</span>
-                            <h3>${data.nombre}</h3>
-                            <p class="price">${precioFormateado}</p>
-                            ${textoStock}
-                        </div>
-                    `;
-
-                    tarjeta.addEventListener('click', () => {
-                        const modalImgEl = document.getElementById("modalImg");
-                        modalImgEl.onerror = function() {
-                            if (this.src !== data.imagen) this.src = data.imagen;
-                        };
-                        modalImgEl.src = obtenerUrlOptimizada(data.imagen, 800);
-                        modalImgEl.alt = data.nombre;
-                        document.getElementById("modalName").innerText = data.nombre;
-                        document.getElementById("modalDesc").innerText = data.descripcion || '';
-                        document.getElementById("modalPrice").innerText = precioFormateado;
-                        document.getElementById("productModal").style.display = "flex";
-                    });
-
-                    contenedorGrilla.prepend(tarjeta);
-                }
+                if (contenedorGrilla) contenedorGrilla.appendChild(crearTarjeta(data, catUpper, index));
             });
 
-            document.querySelectorAll('#reposteria-container .product-grid').forEach(prepararAnimacion);
+            document.querySelectorAll('#reposteria-container .product-grid').forEach(grilla => {
+                B.ordenarTarjetas(grilla);
+                prepararAnimacion(grilla);
+            });
             if (productos.length > 0) yaSeMostroCatalogo = true;
 
             if (filtrosContainer) {
@@ -333,12 +364,16 @@
                     const data = docSnap.data();
                     const catUpper = (data.categoria || '').trim().toUpperCase();
                     if (categoriasValidas.includes(catUpper)) {
-                        productosReposteria.push(data);
+                        productosReposteria.push({ id: docSnap.id, ...data });
                     }
                 });
 
                 renderizarReposteria(productosReposteria);
                 guardarFotosEnCelular(productosReposteria);
+
+                // Si Firebase respondió desde la memoria del celular, no hay conexión
+                if (querySnapshot.metadata && querySnapshot.metadata.fromCache) estadoPrecios.sinConexion();
+                else estadoPrecios.actualizado();
 
                 try {
                     localStorage.setItem(CACHE_KEY, JSON.stringify(productosReposteria));
@@ -346,7 +381,9 @@
 
             } catch (error) {
                 console.error("Error al cargar repostería: ", error);
-                window.mostrarErrorSplash('Hubo un error al cargar la vitrina. Revisa tu conexión.');
+                estadoPrecios.sinConexion();
+                if (productosActuales.length) window.ocultarSplash();
+                else window.mostrarErrorSplash('Hubo un error al cargar la vitrina. Revisa tu conexión.');
             }
         }
 
@@ -356,6 +393,13 @@
             if (botonChip) {
                 botonChip.classList.add('active');
                 botonChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+            // Al elegir una categoría, en la vista de lista se despliega sola
+            if (catNombre !== 'TODAS') {
+                categoriasAbiertas.add(catNombre);
+                document.querySelectorAll('#reposteria-container .section-title').forEach(t => {
+                    if (t.dataset.categoria === catNombre) t.classList.add('abierta');
+                });
             }
             aplicarFiltros();
 
@@ -370,49 +414,33 @@
 
         function aplicarFiltros() {
             const buscador = document.getElementById('buscador-reposteria');
-            const textoBuscado = normalizarTexto(buscador ? buscador.value : "");
+            const consulta = buscador ? buscador.value : "";
+            const buscando = B.normalizar(consulta) !== "";
             const sinResultados = document.getElementById('sin-resultados');
             const reposteriaContainer = document.getElementById('reposteria-container');
             let totalVisibles = 0;
 
-            if (reposteriaContainer) {
-                if (textoBuscado !== "") {
-                    reposteriaContainer.classList.add('modo-busqueda');
-                } else {
-                    reposteriaContainer.classList.remove('modo-busqueda');
-                }
-            }
+            if (reposteriaContainer) reposteriaContainer.classList.toggle('modo-busqueda', buscando);
 
-            document.querySelectorAll('.section-title').forEach(titulo => {
+            document.querySelectorAll('#reposteria-container .section-title').forEach(titulo => {
                 const catTitulo = titulo.dataset.categoria;
                 const grilla = titulo.nextElementSibling;
                 if (!grilla || !grilla.classList.contains('product-grid')) return;
 
-                const coincideCategoria = (textoBuscado !== "") || (categoriaActiva === "TODAS" || categoriaActiva === catTitulo);
+                const coincideCategoria = buscando || categoriaActiva === "TODAS" || categoriaActiva === catTitulo;
                 let visiblesEnGrilla = 0;
 
                 grilla.querySelectorAll('.product-card').forEach(tarjeta => {
-                    const nombreProducto = normalizarTexto(tarjeta.querySelector('h3').innerText);
-                    const catProducto = normalizarTexto(catTitulo);
-                    if (coincideCategoria && (nombreProducto.includes(textoBuscado) || catProducto.includes(textoBuscado))) {
-                        tarjeta.style.display = '';
-                        visiblesEnGrilla++;
-                        totalVisibles++;
-                    } else {
-                        tarjeta.style.display = 'none';
-                    }
+                    // Búsqueda tolerante: acepta errores de tipeo y palabras en cualquier orden
+                    const visible = coincideCategoria && B.coincide(tarjeta.dataset.buscar, consulta);
+                    tarjeta.style.display = visible ? '' : 'none';
+                    if (visible) { visiblesEnGrilla++; totalVisibles++; }
                 });
 
-                if (visiblesEnGrilla > 0 && textoBuscado === "") {
-                    titulo.style.display = '';
-                    grilla.style.display = '';
-                } else if (visiblesEnGrilla > 0 && textoBuscado !== "") {
-                    titulo.style.display = 'none';
-                    grilla.style.display = '';
-                } else {
-                    titulo.style.display = 'none';
-                    grilla.style.display = 'none';
-                }
+                const cuenta = titulo.querySelector('.cuenta-cat');
+                if (cuenta) cuenta.textContent = visiblesEnGrilla;
+                titulo.style.display = (visiblesEnGrilla > 0 && !buscando) ? '' : 'none';
+                grilla.style.display = visiblesEnGrilla > 0 ? '' : 'none';
             });
 
             if (sinResultados) {

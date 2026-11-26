@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'panaderia-belen-static-v11';
+const STATIC_CACHE = 'panaderia-belen-static-v13';
 const IMAGE_CACHE = 'panaderia-belen-fotos-v2';
 
 const ASSETS_TO_CACHE = [
@@ -15,6 +15,7 @@ const ASSETS_TO_CACHE = [
     './imagen/chef-gorro.webp',
     './splash.js',
     './header-escena.js',
+    './utilidades.js',
     './imagen/icon-192.png',
     './imagen/icon-512.png'
 ];

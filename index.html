@@ -60,6 +60,14 @@
                     <span class="scan-label">Escanear</span>
                 </button>
             </div>
+            <div class="controles-extra">
+                <span id="estado-precios" class="estado-precios" role="status">Revisando precios...</span>
+                <button type="button" id="btn-vista" class="btn-vista" aria-pressed="false">
+                    <svg class="icono-lista" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>
+                    <svg class="icono-fotos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>
+                    <span class="vista-label">Lista</span>
+                </button>
+            </div>
             <div id="filtros-categorias" class="category-chips"></div>
         </div>
 
@@ -83,6 +91,7 @@
                 <h2 id="modalName"></h2>
                 <p id="modalDesc"></p>
                 <div id="modalPrice" class="modal-price"></div>
+                <p id="modalFecha" class="modal-fecha"></p>
             </div>
         </div>
     </div>
@@ -92,7 +101,9 @@
             <span id="closeScannerClienteBtn" class="close-btn" title="Cerrar">&times;</span>
             <h3 style="margin: 0 0 12px 0; color: var(--primary);">Escanear Producto</h3>
             <div id="qr-reader-cliente" class="scanner-viewport"></div>
-            <p id="scannerClienteMsg" style="font-size: 0.9rem; color: var(--text-muted); margin: 0;">Apunta la cámara al código de barra o QR para ver su precio</p>
+            <ul id="scanResultados" class="scan-resultados"></ul>
+            <p id="scannerClienteMsg" style="font-size: 0.9rem; color: var(--text-muted); margin: 0;">Apunta al código: puedes escanear varios productos seguidos</p>
+            <button type="button" id="btnTerminarEscaneo" class="btn-terminar-escaneo">Terminar</button>
         </div>
     </div>
 
@@ -151,6 +162,8 @@
         }
     </script>
 
+    <script src="utilidades.js"></script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getFirestore, collection, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -169,21 +182,27 @@
 
         enableIndexedDbPersistence(db).catch((err) => { console.log("Caché local:", err.code); });
 
+        const B = window.Belen;
+        const estadoPrecios = B.crearEstadoPrecios(document.getElementById('estado-precios'));
+        B.iniciarSelectorVista(document.getElementById('btn-vista'), document.getElementById('categorias-container'));
+
+        // Vista de lista: cada categoría se pliega/despliega al tocar su título
+        const categoriasAbiertas = new Set();
+        document.getElementById('categorias-container').addEventListener('click', (e) => {
+            const titulo = e.target.closest('.section-title');
+            if (!titulo) return;
+            const cat = titulo.dataset.categoria;
+            if (titulo.classList.toggle('abierta')) categoriasAbiertas.add(cat);
+            else categoriasAbiertas.delete(cat);
+        });
+
         let categoriaActiva = "TODAS";
+        let productosActuales = [];
         const CACHE_KEY = "panaderia_belen_catalogo_v1";
         const categoriasExcluidas = ["TORTAS", "KUCHEN", "EMPANADAS", "COSAS DULCES"];
 
-        // Muestra todos los precios igual: $1.300, $650, etc.
-        function formatearPrecio(precio) {
-            if (!precio) return "";
-            const str = String(precio).trim();
-            const sinSigno = str.replace(/^\$\s*/, "");
-            if (/^[\d.\s]+$/.test(sinSigno)) {
-                const numero = Number(sinSigno.replace(/[.\s]/g, ""));
-                if (!isNaN(numero)) return "$" + numero.toLocaleString("es-CL");
-            }
-            return str.startsWith("$") ? str : `$${str}`;
-        }
+        const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const codigosDe = (data) => Array.isArray(data.codigos) ? data.codigos : (data.codigo ? [data.codigo] : []);
 
         // Anima las tarjetas de cada carrusel cuando aparece en pantalla
         let yaSeMostroCatalogo = false;
@@ -208,15 +227,6 @@
             } else {
                 grilla.classList.add('in-view');
             }
-        }
-
-        function normalizarTexto(texto) {
-            return (texto || "")
-                .toString()
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .trim();
         }
 
         function obtenerUrlOptimizada(url, ancho = 400) {
@@ -246,17 +256,74 @@
             });
         }
 
+        // Detalle del producto con fecha del último cambio de precio
+        function abrirDetalle(data) {
+            const modalImgEl = document.getElementById("modalImg");
+            modalImgEl.onerror = function() {
+                if (this.src !== data.imagen) this.src = data.imagen;
+            };
+            modalImgEl.src = obtenerUrlOptimizada(data.imagen, 800);
+            modalImgEl.alt = data.nombre;
+            document.getElementById("modalName").innerText = data.nombre;
+            document.getElementById("modalDesc").innerText = data.descripcion || '';
+            document.getElementById("modalPrice").innerText = B.formatearPrecio(data.precio);
+
+            const fecha = document.getElementById("modalFecha");
+            if (data.precioActualizadoEn) {
+                fecha.textContent = `Precio actualizado el ${B.fechaCorta(data.precioActualizadoEn)}`;
+                fecha.classList.toggle('nuevo', B.esPrecioNuevo(data.precioActualizadoEn));
+            } else {
+                fecha.textContent = '';
+            }
+
+            document.getElementById("productModal").style.display = "flex";
+        }
+
+        function crearTarjeta(data, catUpper, index) {
+            const precioFormateado = B.formatearPrecio(data.precio);
+            const codigosArr = codigosDe(data);
+            const tarjeta = document.createElement('div');
+            tarjeta.className = 'product-card';
+            tarjeta.dataset.codigos = codigosArr.join(' ');
+            tarjeta.dataset.nombre = data.nombre || '';
+            tarjeta.dataset.buscar = `${data.nombre || ''} ${catUpper} ${codigosArr.join(' ')}`;
+
+            const esPrioritaria = index < 6;
+            const loadingAttr = esPrioritaria ? 'eager' : 'lazy';
+            const priorityAttr = esPrioritaria ? 'fetchpriority="high"' : '';
+            const thumbUrl = obtenerUrlOptimizada(data.imagen, 400);
+            const nuevo = B.esPrecioNuevo(data.precioActualizadoEn)
+                ? `<span class="badge-precio-nuevo" title="Cambió el ${B.fechaCorta(data.precioActualizadoEn)}">Precio nuevo</span>`
+                : '';
+
+            tarjeta.innerHTML = `
+                <div class="card-img-wrap">
+                    <img src="${thumbUrl}" data-original="${esc(data.imagen)}" alt="${esc(data.nombre)}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
+                    <span class="card-hover-hint">Ver detalle</span>
+                </div>
+                <div class="info">
+                    <div class="card-meta"><span class="card-cat-tag">${esc(catUpper)}</span>${nuevo}</div>
+                    <h3>${esc(data.nombre)}</h3>
+                    <p class="price">${esc(precioFormateado)}</p>
+                </div>
+            `;
+
+            tarjeta.addEventListener('click', () => abrirDetalle(data));
+            return tarjeta;
+        }
+
         function renderizarCatalogo(productos, categorias) {
             const categoriasContainer = document.getElementById('categorias-container');
             const filtrosContainer = document.getElementById('filtros-categorias');
+            productosActuales = productos;
 
             if (categoriasContainer) categoriasContainer.innerHTML = '';
 
             categorias.forEach(catNombre => {
                 const h2 = document.createElement('h2');
-                h2.className = 'section-title';
+                h2.className = 'section-title' + (categoriasAbiertas.has(catNombre) ? ' abierta' : '');
                 h2.dataset.categoria = catNombre;
-                h2.textContent = catNombre;
+                h2.innerHTML = `<span class="titulo-cat">${esc(catNombre)}</span><span class="cuenta-cat"></span>`;
 
                 const divGrid = document.createElement('div');
                 divGrid.className = 'product-grid reveal';
@@ -272,51 +339,14 @@
 
             productos.forEach((data, index) => {
                 const catUpper = data.categoria.trim().toUpperCase();
-                const idGrilla = 'grid-' + catUpper.replace(/\s+/g, '-');
-                const contenedorGrilla = document.getElementById(idGrilla);
-
-                if (contenedorGrilla) {
-                    const precioFormateado = formatearPrecio(data.precio);
-                    const codigosArr = Array.isArray(data.codigos) ? data.codigos : (data.codigo ? [data.codigo] : []);
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'product-card';
-                    tarjeta.dataset.codigos = codigosArr.join(' ');
-
-                    const esPrioritaria = index < 6;
-                    const loadingAttr = esPrioritaria ? 'eager' : 'lazy';
-                    const priorityAttr = esPrioritaria ? 'fetchpriority="high"' : '';
-                    const thumbUrl = obtenerUrlOptimizada(data.imagen, 400);
-
-                    tarjeta.innerHTML = `
-                        <div class="card-img-wrap">
-                            <img src="${thumbUrl}" data-original="${data.imagen}" alt="${data.nombre}" loading="${loadingAttr}" ${priorityAttr} decoding="async" onload="this.classList.add('loaded')" onerror="if(this.src !== this.dataset.original){this.src = this.dataset.original;}">
-                            <span class="card-hover-hint">Ver detalle</span>
-                        </div>
-                        <div class="info">
-                            <span class="card-cat-tag">${catUpper}</span>
-                            <h3>${data.nombre}</h3>
-                            <p class="price">${precioFormateado}</p>
-                        </div>
-                    `;
-
-                    tarjeta.addEventListener('click', () => {
-                        const modalImgEl = document.getElementById("modalImg");
-                        modalImgEl.onerror = function() {
-                            if (this.src !== data.imagen) this.src = data.imagen;
-                        };
-                        modalImgEl.src = obtenerUrlOptimizada(data.imagen, 800);
-                        modalImgEl.alt = data.nombre;
-                        document.getElementById("modalName").innerText = data.nombre;
-                        document.getElementById("modalDesc").innerText = data.descripcion || '';
-                        document.getElementById("modalPrice").innerText = precioFormateado;
-                        document.getElementById("productModal").style.display = "flex";
-                    });
-
-                    contenedorGrilla.prepend(tarjeta);
-                }
+                const contenedorGrilla = document.getElementById('grid-' + catUpper.replace(/\s+/g, '-'));
+                if (contenedorGrilla) contenedorGrilla.appendChild(crearTarjeta(data, catUpper, index));
             });
 
-            document.querySelectorAll('#categorias-container .product-grid').forEach(prepararAnimacion);
+            document.querySelectorAll('#categorias-container .product-grid').forEach(grilla => {
+                B.ordenarTarjetas(grilla);
+                prepararAnimacion(grilla);
+            });
             if (productos.length > 0) yaSeMostroCatalogo = true;
 
             if (filtrosContainer) {
@@ -372,7 +402,7 @@
                     if (data.categoria) {
                         const catUpper = data.categoria.trim().toUpperCase();
                         if (!categoriasExcluidas.includes(catUpper)) {
-                            productos.push(data);
+                            productos.push({ id: docSnap.id, ...data });
                             categoriasUnicas.add(catUpper);
                         }
                     }
@@ -392,13 +422,19 @@
                 renderizarCatalogo(productos, categorias);
                 guardarFotosEnCelular(productos);
 
+                // Si Firebase respondió desde la memoria del celular, no hay conexión
+                if (prodSnapshot.metadata && prodSnapshot.metadata.fromCache) estadoPrecios.sinConexion();
+                else estadoPrecios.actualizado();
+
                 try {
                     localStorage.setItem(CACHE_KEY, JSON.stringify({ productos, categorias }));
                 } catch (e) {}
 
             } catch (error) {
                 console.error("Error al cargar los datos: ", error);
-                window.mostrarErrorSplash('Hubo un error al cargar el catálogo. Revisa tu conexión.');
+                estadoPrecios.sinConexion();
+                if (productosActuales.length) window.ocultarSplash();
+                else window.mostrarErrorSplash('Hubo un error al cargar el catálogo. Revisa tu conexión.');
             }
         }
 
@@ -408,6 +444,13 @@
             if (botonChip) {
                 botonChip.classList.add('active');
                 botonChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+            // Al elegir una categoría, en la vista de lista se despliega sola
+            if (catNombre !== 'TODAS') {
+                categoriasAbiertas.add(catNombre);
+                document.querySelectorAll('#categorias-container .section-title').forEach(t => {
+                    if (t.dataset.categoria === catNombre) t.classList.add('abierta');
+                });
             }
             aplicarFiltros();
 
@@ -422,54 +465,34 @@
 
         function aplicarFiltros() {
             const buscador = document.getElementById('buscador-productos');
-            const textoBuscado = normalizarTexto(buscador ? buscador.value : "");
+            const consulta = buscador ? buscador.value : "";
+            const buscando = B.normalizar(consulta) !== "";
             const sinResultados = document.getElementById('sin-resultados');
             const categoriasContainer = document.getElementById('categorias-container');
             let totalVisibles = 0;
 
-            if (categoriasContainer) {
-                if (textoBuscado !== "") {
-                    categoriasContainer.classList.add('modo-busqueda');
-                } else {
-                    categoriasContainer.classList.remove('modo-busqueda');
-                }
-            }
+            if (categoriasContainer) categoriasContainer.classList.toggle('modo-busqueda', buscando);
 
-            document.querySelectorAll('.section-title').forEach(titulo => {
+            document.querySelectorAll('#categorias-container .section-title').forEach(titulo => {
                 const catTitulo = titulo.dataset.categoria;
                 const grilla = titulo.nextElementSibling;
                 if (!grilla || !grilla.classList.contains('product-grid')) return;
 
                 // Si está escribiendo en el buscador, busca en todas las categorías a la vez
-                const coincideCategoria = (textoBuscado !== "") || (categoriaActiva === "TODAS" || categoriaActiva === catTitulo);
+                const coincideCategoria = buscando || categoriaActiva === "TODAS" || categoriaActiva === catTitulo;
                 let visiblesEnGrilla = 0;
 
                 grilla.querySelectorAll('.product-card').forEach(tarjeta => {
-                    const nombreProducto = normalizarTexto(tarjeta.querySelector('h3').innerText);
-                    const catProducto = normalizarTexto(catTitulo);
-                    const codigosProducto = normalizarTexto(tarjeta.dataset.codigos || "");
-                    if (
-                        coincideCategoria &&
-                        (nombreProducto.includes(textoBuscado) || catProducto.includes(textoBuscado) || codigosProducto.includes(textoBuscado))
-                    ) {
-                        tarjeta.style.display = '';
-                        visiblesEnGrilla++;
-                        totalVisibles++;
-                    } else {
-                        tarjeta.style.display = 'none';
-                    }
+                    // Búsqueda tolerante: acepta errores de tipeo y palabras en cualquier orden
+                    const visible = coincideCategoria && B.coincide(tarjeta.dataset.buscar, consulta);
+                    tarjeta.style.display = visible ? '' : 'none';
+                    if (visible) { visiblesEnGrilla++; totalVisibles++; }
                 });
 
-                if (visiblesEnGrilla > 0 && textoBuscado === "") {
-                    titulo.style.display = '';
-                    grilla.style.display = '';
-                } else if (visiblesEnGrilla > 0 && textoBuscado !== "") {
-                    titulo.style.display = 'none';
-                    grilla.style.display = '';
-                } else {
-                    titulo.style.display = 'none';
-                    grilla.style.display = 'none';
-                }
+                const cuenta = titulo.querySelector('.cuenta-cat');
+                if (cuenta) cuenta.textContent = visiblesEnGrilla;
+                titulo.style.display = (visiblesEnGrilla > 0 && !buscando) ? '' : 'none';
+                grilla.style.display = visiblesEnGrilla > 0 ? '' : 'none';
             });
 
             if (sinResultados) {
@@ -484,27 +507,54 @@
             buscador.addEventListener('input', aplicarFiltros);
         }
 
-        // --- ESCÁNER DE CÓDIGO EN EL CATÁLOGO ---
+        // --- ESCÁNER CONTINUO: escanea varios productos seguidos sin cerrar la cámara ---
         let scannerCliente = null;
+        let ultimoCodigo = '';
+        let ultimoMomento = 0;
         const scannerModalCliente = document.getElementById('scannerModalCliente');
         const btnEscanearCatalogo = document.getElementById('btn-escanear-catalogo');
         const closeScannerClienteBtn = document.getElementById('closeScannerClienteBtn');
+        const btnTerminarEscaneo = document.getElementById('btnTerminarEscaneo');
         const scannerClienteMsg = document.getElementById('scannerClienteMsg');
+        const listaEscaneados = document.getElementById('scanResultados');
 
-        function beepCliente() {
+        function beepCliente(ok) {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(1100, ctx.currentTime);
+                osc.frequency.setValueAtTime(ok ? 1100 : 380, ctx.currentTime);
                 gain.gain.setValueAtTime(0.15, ctx.currentTime);
                 osc.connect(gain);
                 gain.connect(ctx.destination);
                 osc.start();
-                osc.stop(ctx.currentTime + 0.12);
+                osc.stop(ctx.currentTime + (ok ? 0.12 : 0.25));
             } catch (e) {}
-            if (navigator.vibrate) navigator.vibrate(100);
+            if (navigator.vibrate) navigator.vibrate(ok ? 100 : [80, 60, 80]);
+        }
+
+        function buscarPorCodigo(codigo) {
+            const c = codigo.trim().toLowerCase();
+            return productosActuales.find(p => codigosDe(p).some(x => String(x).trim().toLowerCase() === c));
+        }
+
+        function mostrarEscaneado(prod, codigo) {
+            const li = document.createElement('li');
+            if (prod) {
+                li.className = 'scan-res';
+                li.innerHTML = `
+                    <img src="${obtenerUrlOptimizada(prod.imagen, 160)}" alt="">
+                    <div class="scan-res-info">
+                        <span class="scan-res-nombre">${esc(prod.nombre)}</span>
+                        <strong class="scan-res-precio">${esc(B.formatearPrecio(prod.precio))}</strong>
+                    </div>`;
+            } else {
+                li.className = 'scan-res no-encontrado';
+                li.textContent = `El código ${codigo} no está en el catálogo`;
+            }
+            listaEscaneados.prepend(li);
+            while (listaEscaneados.children.length > 5) listaEscaneados.lastElementChild.remove();
         }
 
         async function cerrarScannerCliente() {
@@ -521,9 +571,10 @@
         if (btnEscanearCatalogo) {
             btnEscanearCatalogo.addEventListener('click', async () => {
                 if (!window.Html5Qrcode) return;
-                scannerModalCliente.style.display = 'flex';
-                scannerClienteMsg.textContent = 'Apunta la cámara al código de barra o QR para ver su precio';
                 await cerrarScannerCliente();
+                listaEscaneados.innerHTML = '';
+                ultimoCodigo = '';
+                scannerClienteMsg.textContent = 'Apunta al código: puedes escanear varios productos seguidos';
                 scannerModalCliente.style.display = 'flex';
 
                 scannerCliente = new Html5Qrcode("qr-reader-cliente");
@@ -531,20 +582,16 @@
                     await scannerCliente.start(
                         { facingMode: "environment" },
                         { fps: 12, qrbox: { width: 250, height: 150 } },
-                        async (codigoLeido) => {
+                        (codigoLeido) => {
                             const codigo = String(codigoLeido).trim();
                             if (!codigo) return;
-                            beepCliente();
-                            await cerrarScannerCliente();
-                            if (buscador) {
-                                buscador.value = codigo;
-                                aplicarFiltros();
-                                // Si encontró exactamente un producto visible, abre su modal con el precio en grande automáticamente
-                                const visibles = document.querySelectorAll('.product-card:not([style*="display: none"])');
-                                if (visibles.length === 1) {
-                                    visibles[0].click();
-                                }
-                            }
+                            // evita contar dos veces el mismo código mientras sigue frente a la cámara
+                            if (codigo === ultimoCodigo && Date.now() - ultimoMomento < 2500) return;
+                            ultimoCodigo = codigo;
+                            ultimoMomento = Date.now();
+                            const prod = buscarPorCodigo(codigo);
+                            beepCliente(!!prod);
+                            mostrarEscaneado(prod, codigo);
                         },
                         () => {}
                     );
@@ -554,9 +601,8 @@
             });
         }
 
-        if (closeScannerClienteBtn) {
-            closeScannerClienteBtn.addEventListener('click', cerrarScannerCliente);
-        }
+        if (closeScannerClienteBtn) closeScannerClienteBtn.addEventListener('click', cerrarScannerCliente);
+        if (btnTerminarEscaneo) btnTerminarEscaneo.addEventListener('click', cerrarScannerCliente);
     </script>
 </body>
 </html>

@@ -11,12 +11,15 @@
     const NS = 'http://www.w3.org/2000/svg';
     const CX = 200, CY = 196;
 
-    // Primera visita de la sesión: animación completa. Después: versión rápida.
-    let yaVisto = false;
-    try { yaVisto = sessionStorage.getItem('splash_belen_visto') === '1'; } catch (e) {}
-    try { sessionStorage.setItem('splash_belen_visto', '1'); } catch (e) {}
-    const VELOCIDAD = yaVisto ? 2.6 : 1;
-    const DURACION_MINIMA = yaVisto ? 1500 : 3900;
+    // La animación completa se ve una vez al día. Las demás veces la pantalla se va
+    // apenas el catálogo está listo (los precios guardados en el celular cargan al instante).
+    const hoy = new Date().toDateString();
+    let yaVistoHoy = false;
+    try { yaVistoHoy = localStorage.getItem('splash_belen_dia') === hoy; } catch (e) {}
+    try { localStorage.setItem('splash_belen_dia', hoy); } catch (e) {}
+    const VELOCIDAD = yaVistoHoy ? 4 : 1;
+    const DURACION_MINIMA = yaVistoHoy ? 0 : 3900;
+    const DURACION_SALIDA = yaVistoHoy ? 250 : 650;
 
     function el(tag, attrs, parent) {
         const n = document.createElementNS(NS, tag);
@@ -41,7 +44,7 @@
     // ---------- Contenedor ----------
     const splash = document.createElement('div');
     splash.id = 'pantalla-carga';
-    splash.className = 'splash';
+    splash.className = 'splash' + (yaVistoHoy ? ' rapido' : '');
     splash.setAttribute('role', 'status');
     splash.setAttribute('aria-live', 'polite');
 
@@ -227,7 +230,7 @@
         const espera = Math.max(0, DURACION_MINIMA - (performance.now() - inicio));
         setTimeout(() => {
             splash.classList.add('hide');
-            setTimeout(() => { splash.style.display = 'none'; }, 650);
+            setTimeout(() => { splash.style.display = 'none'; }, DURACION_SALIDA);
         }, espera);
     };
     window.mostrarErrorSplash = function (mensaje) {

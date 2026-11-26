@@ -1046,6 +1046,11 @@ header::after {
     pointer-events: none;
 }
 
+/* Después de la primera vez del día, la pantalla se va enseguida */
+.splash.rapido {
+    transition-duration: 0.25s;
+}
+
 .splash.hide .splash-stage {
     transform: scale(1.12);
 }
@@ -1942,6 +1947,38 @@ header::after {
     padding: 6px 2px;
 }
 
+/* Título de categoría dentro de la lista de productos sin código */
+.assign-cat {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 10px 0 2px;
+    padding: 7px 12px;
+    border-left: 4px solid #6a1b9a;
+    border-radius: 0 8px 8px 0;
+    background: #f3e5f5;
+    color: #4a148c;
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
+}
+
+.assign-cat:first-child {
+    margin-top: 0;
+}
+
+.assign-cat b {
+    min-width: 26px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #6a1b9a;
+    color: white;
+    font-size: 0.78rem;
+    text-align: center;
+}
+
 .assign-card {
     background: white;
     border: 1.5px solid #e0d6cc;
@@ -1984,6 +2021,419 @@ header::after {
     font-size: 0.9rem;
     font-weight: 800;
     color: var(--accent);
+}
+
+/* ============ HERRAMIENTAS PARA EMPLEADOS ============ */
+
+/* ---------- Estado de precios + botón de vista ---------- */
+.controles-extra {
+    max-width: 640px;
+    margin: -2px auto 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.estado-precios {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.estado-precios::before {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #bdbdbd;
+}
+
+.estado-precios.ok::before {
+    background: #43a047;
+    box-shadow: 0 0 0 0 rgba(67, 160, 71, 0.5);
+    animation: pulseDot 2.2s ease-out infinite;
+}
+
+.estado-precios.offline {
+    color: #b26a00;
+}
+
+.estado-precios.offline::before {
+    background: #fb8c00;
+}
+
+.btn-vista {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    color: var(--primary);
+    border: 1.5px solid #ecdccb;
+    border-radius: 999px;
+    padding: 6px 13px;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s var(--ease-spring);
+}
+
+.btn-vista svg {
+    width: 16px;
+    height: 16px;
+}
+
+.btn-vista .icono-fotos { display: none; }
+.btn-vista.activo .icono-fotos { display: block; }
+.btn-vista.activo .icono-lista { display: none; }
+
+.btn-vista:hover {
+    border-color: var(--accent-light);
+    color: var(--accent);
+}
+
+.btn-vista:active {
+    transform: scale(0.94);
+}
+
+/* ---------- Meta de la tarjeta: categoría + precio nuevo ---------- */
+.card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+}
+
+.badge-precio-nuevo {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: #1b5e20;
+    background: #e8f5e9;
+    border: 1px solid #a5d6a7;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 5px;
+}
+
+.badge-precio-nuevo::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #43a047;
+    animation: pulseDot 2s ease-out infinite;
+}
+
+/* ---------- Vista de lista compacta ---------- */
+/* El contador de productos solo se ve en la vista de lista */
+.section-title .cuenta-cat {
+    display: none;
+}
+
+/* Cada categoría es una barra que se toca para desplegarla */
+.vista-lista .section-title {
+    margin: 0 0 8px;
+    padding: 13px 14px 13px 22px;
+    font-size: 1.08rem;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(78, 52, 46, 0.06);
+    cursor: pointer;
+    user-select: none;
+    gap: 10px;
+    animation: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.vista-lista .section-title:hover {
+    border-color: #ffd5a8;
+}
+
+.vista-lista .section-title::before {
+    left: 9px;
+    height: 55%;
+}
+
+.vista-lista .section-title .titulo-cat {
+    flex: 1;
+}
+
+.vista-lista .section-title .cuenta-cat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+/* Flecha que gira al desplegar */
+.vista-lista .section-title::after {
+    content: "";
+    width: 9px;
+    height: 9px;
+    padding: 0;
+    background: none;
+    border-right: 2.5px solid var(--accent);
+    border-bottom: 2.5px solid var(--accent);
+    border-radius: 1px;
+    transform: rotate(-45deg);
+    animation: none;
+    transition: transform 0.3s var(--ease-out);
+}
+
+.vista-lista .section-title.abierta {
+    background: linear-gradient(90deg, #fff3e0, white);
+    border-color: #ffcc80;
+    margin-bottom: 6px;
+}
+
+.vista-lista .section-title.abierta::after {
+    transform: rotate(45deg) translate(-2px, -2px);
+}
+
+/* Plegada = sus productos no se ven (salvo al buscar, que muestra todo) */
+.vista-lista:not(.modo-busqueda) .section-title:not(.abierta) + .product-grid {
+    display: none !important;
+}
+
+.vista-lista .product-grid,
+.vista-lista.modo-busqueda .product-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    overflow: visible !important;
+    gap: 5px 8px;
+    padding: 0 0 12px !important;
+    animation: riseIn 0.3s var(--ease-out);
+}
+
+/* Las categorías sin resultados se ocultan también en la vista de lista */
+.vista-lista .product-grid[style*="display: none"] {
+    display: none !important;
+}
+
+.vista-lista.modo-busqueda {
+    display: block !important;
+}
+
+.vista-lista .product-card,
+.vista-lista.modo-busqueda .product-card {
+    flex: none !important;
+    width: 100% !important;
+    flex-direction: row;
+    align-items: center;
+    border-radius: 12px;
+    padding: 4px 6px 4px 4px;
+    box-shadow: 0 1px 3px rgba(78, 52, 46, 0.06);
+}
+
+.vista-lista .product-card:hover {
+    transform: translateX(3px);
+    box-shadow: 0 4px 14px rgba(239, 108, 0, 0.14);
+}
+
+.vista-lista .card-img-wrap,
+.vista-lista .product-card img {
+    width: 42px !important;
+    height: 42px !important;
+    flex: none;
+    border-radius: 9px;
+}
+
+.vista-lista .product-card:hover img {
+    transform: none;
+}
+
+.vista-lista .card-hover-hint,
+.vista-lista .ribbon-agotado {
+    display: none;
+}
+
+.vista-lista .info {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "meta precio" "nombre precio" "stock precio";
+    align-items: center;
+    column-gap: 10px;
+    text-align: left;
+    padding: 2px 4px 2px 12px !important;
+    background: transparent;
+}
+
+.vista-lista .card-meta {
+    grid-area: meta;
+    justify-content: flex-start;
+}
+
+.vista-lista .card-meta .badge-precio-nuevo,
+.vista-lista .card-meta .card-cat-tag {
+    margin: 0 0 2px;
+}
+
+.vista-lista .info h3 {
+    grid-area: nombre;
+    margin: 0 !important;
+    font-size: 0.98rem !important;
+}
+
+.vista-lista .info .price {
+    grid-area: precio;
+    font-size: 1.12rem !important;
+    padding: 5px 13px;
+    margin: 0;
+}
+
+.vista-lista .info .stock-badge {
+    grid-area: stock;
+    margin: 2px 0 0;
+}
+
+/* Pantallas muy angostas: el precio va bajo el nombre para que el nombre se lea completo */
+@media (max-width: 340px) {
+    .vista-lista .info {
+        grid-template-columns: 1fr;
+        grid-template-areas: "meta" "nombre" "precio" "stock";
+        row-gap: 3px;
+    }
+
+    .vista-lista .info .price {
+        justify-self: start;
+        font-size: 1.02rem !important;
+        padding: 3px 11px;
+    }
+}
+
+/* ---------- Detalle: fecha de cambio + botón agregar ---------- */
+.modal-fecha {
+    margin: 10px 0 0 !important;
+    font-size: 0.85rem !important;
+    font-weight: 700;
+}
+
+.modal-fecha.nuevo {
+    color: #2e7d32 !important;
+}
+
+/* ---------- Escáner continuo ---------- */
+.scan-resultados {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.scan-res {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #faf6f1;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 6px 8px;
+    animation: riseIn 0.35s var(--ease-out);
+}
+
+.scan-res img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex: none;
+}
+
+.scan-res-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.scan-res-nombre {
+    font-weight: 800;
+    color: var(--primary);
+    font-size: 0.9rem;
+    line-height: 1.25;
+}
+
+.scan-res-precio {
+    font-family: var(--font-display);
+    color: var(--accent-deep);
+    font-size: 1.05rem;
+}
+
+/* El último escaneado se ve grande */
+.scan-res:first-child {
+    background: linear-gradient(135deg, #fff8e1, #ffe9c7);
+    border: 2px solid #ffcc80;
+    padding: 10px 12px;
+}
+
+.scan-res:first-child img {
+    width: 64px;
+    height: 64px;
+}
+
+.scan-res:first-child .scan-res-nombre {
+    font-size: 1.05rem;
+}
+
+.scan-res:first-child .scan-res-precio {
+    font-size: 2rem;
+    line-height: 1.1;
+}
+
+.scan-res.no-encontrado {
+    background: #ffebee;
+    border-color: #ef9a9a;
+    color: #b71c1c;
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
+.scan-res.no-encontrado:first-child {
+    background: #ffebee;
+    border: 2px solid #ef9a9a;
+}
+
+.btn-terminar-escaneo {
+    margin-top: 12px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
 }
 
 /* ============ MENOS MOVIMIENTO (accesibilidad) ============ */
